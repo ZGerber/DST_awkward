@@ -1,0 +1,33 @@
+bank_id: 13109
+name: "sdtrgbk"
+endian: "<"
+layout:
+  - { name: "raw_bankid",    type: "int32" }
+  - { name: "nsd",           type: "int16" }
+  - { name: "n_bad_ped",     type: "int16" }
+  - { name: "n_spat_cont",   type: "int16" }
+  - { name: "n_isol",        type: "int16" }
+  - { name: "n_pot_st_cont", type: "int16" }
+  - { name: "n_l1_tg",       type: "int16" }
+  - { name: "dec_ped",       type: "int16" }
+  - { name: "inc_ped",       type: "int16" }
+  - { name: "trigp",         type: "int8" }
+  - { name: "igevent",       type: "int8" }
+  
+  - { name: "il2sd",         type: "int16", shape: [3] }
+  - { name: "il2sd_sig",     type: "int16", shape: [3] }
+  
+  # Per-SD scalar arrays
+  - { name: "xxyy",          type: "int16", shape: ["nsd"] }
+  - { name: "wfindex_cal",   type: "int16", shape: ["nsd"] }
+  - { name: "nl1",           type: "int16", shape: ["nsd"] } # Number of signals per SD
+  - { name: "ig",            type: "int8",  shape: ["nsd"] }
+  
+  # Complex Mixed Loop over 'nsd'
+  - type: "interleaved_mixed"
+    count: "nsd"
+    items:
+      - { name: "secf", type: "float64", size_from: "nl1" } # Dynamic: nl1[i] doubles
+      - { name: "ich",  type: "int16",   size_from: "nl1" } # Dynamic: nl1[i] shorts
+      - { name: "tlim", type: "float64", shape: [2] }       # Fixed: 2 doubles
+      - { name: "q",    type: "int16",   size_from: "nl1", shape: [2] } # Dynamic x Fixed: nl1[i] * 2 shorts

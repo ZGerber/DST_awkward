@@ -1,0 +1,50 @@
+bank_id: 13103
+name: "rufptn"
+endian: "<"
+layout:
+  - { name: "nhits",    type: "int32" }
+  - { name: "nsclust",  type: "int32" }
+  - { name: "nstclust", type: "int32" }
+  - { name: "nborder",  type: "int32" }
+
+  - { name: "isgood",   type: "int32", shape: ["nhits"] }
+  - { name: "wfindex",  type: "int32", shape: ["nhits"] }
+  - { name: "xxyy",     type: "int32", shape: ["nhits"] }
+  - { name: "nfold",    type: "int32", shape: ["nhits"] }
+
+  - type: "interleaved_sequence"
+    count: "nhits"
+    items:
+      - { name: "sstart",    type: "int32",   shape: [2] }
+      - { name: "sstop",     type: "int32",   shape: [2] }
+      - { name: "lderiv",    type: "int32",   shape: [2] }
+      - { name: "zderiv",    type: "int32",   shape: [2] }
+      - { name: "xyzclf",    type: "float64", shape: [3] }
+      - { name: "reltime",   type: "float64", shape: [2] }
+      - { name: "timeerr",   type: "float64", shape: [2] }
+      - { name: "fadcpa",    type: "float64", shape: [2] }
+      - { name: "fadcpaerr", type: "float64", shape: [2] }
+      - { name: "pulsa",     type: "float64", shape: [2] }
+      - { name: "pulsaerr",  type: "float64", shape: [2] }
+      - { name: "ped",       type: "float64", shape: [2] }
+      - { name: "pederr",    type: "float64", shape: [2] }
+      - { name: "vem",       type: "float64", shape: [2] }
+      - { name: "vemerr",    type: "float64", shape: [2] }
+      
+  - { name: "qtot",      type: "float64", shape: [2] }
+  - { name: "tearliest", type: "float64", shape: [2] }
+
+  - type: "interleaved_sequence"
+    count: 3
+    items:
+      - { name: "tyro_cdist",      type: "float64", shape: ["nhits"] }
+      - { name: "tyro_xymoments",  type: "float64", shape: [5] }
+      - { name: "tyro_xypmoments", type: "float64", shape: [2] }
+      - { name: "tyro_u",          type: "float64", shape: [2] }
+      - { name: "tyro_v",          type: "float64", shape: [2] }
+      - { name: "tyro_tfitpars",   type: "float64", shape: [2] }
+  
+  - { name: "tyro_chi2",  type: "float64", shape: [3] }
+  - { name: "tyro_ndof",  type: "float64", shape: [3] }
+  - { name: "tyro_theta", type: "float64", shape: [3] }
+  - { name: "tyro_phi",   type: "float64", shape: [3] }

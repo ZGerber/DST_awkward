@@ -1,0 +1,33 @@
+bank_id: 13107
+name: "rufldf"
+endian: "<"
+layout:
+  - { name: "xcore",   type: "float64", shape: [2] }
+  - { name: "dxcore",  type: "float64", shape: [2] }
+  - { name: "ycore",   type: "float64", shape: [2] }
+  - { name: "dycore",  type: "float64", shape: [2] }
+  - { name: "sc",      type: "float64", shape: [2] }
+  - { name: "dsc",     type: "float64", shape: [2] }
+  - { name: "s600",    type: "float64", shape: [2] }
+  - { name: "s600_0",  type: "float64", shape: [2] }
+  - { name: "s800",    type: "float64", shape: [2] }
+  - { name: "s800_0",  type: "float64", shape: [2] }
+  - { name: "aenergy", type: "float64", shape: [2] }
+  - { name: "energy",  type: "float64", shape: [2] }
+  - { name: "atmcor",  type: "float64", shape: [2] } # Assuming version >= 1
+  - { name: "chi2",    type: "float64", shape: [2] }
+  
+  - { name: "theta",   type: "float64" }
+  - { name: "dtheta",  type: "float64" }
+  - { name: "phi",     type: "float64" }
+  - { name: "dphi",    type: "float64" }
+  - { name: "t0",      type: "float64" }
+  - { name: "dt0",     type: "float64" }
+  
+  - { name: "bdist",   type: "float64" }
+  - { name: "tdistbr", type: "float64" }
+  - { name: "tdistlr", type: "float64" }
+  - { name: "tdistsk", type: "float64" }
+  - { name: "tdist",   type: "float64" }
+  
+  - { name: "ndof",    type: "int32", shape: [2] }

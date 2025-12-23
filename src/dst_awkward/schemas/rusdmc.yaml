@@ -1,0 +1,13 @@
+bank_id: 13105
+name: "rusdmc"
+endian: "<"
+layout:
+  - { name: "event_num",   type: "int32" }
+  - { name: "parttype",    type: "int32" }
+  - { name: "corecounter", type: "int32" }
+  - { name: "tc",          type: "int32" }
+  - { name: "energy",      type: "float32" }
+  - { name: "height",      type: "float32" }
+  - { name: "theta",       type: "float32" }
+  - { name: "phi",         type: "float32" }
+  - { name: "corexyz",     type: "float32", shape: [3] }

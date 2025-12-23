@@ -1,0 +1,12 @@
+bank_id: 13106
+name: "rusdmc1"
+endian: "<"
+layout:
+  - { name: "xcore",   type: "float64" }
+  - { name: "ycore",   type: "float64" }
+  - { name: "t0",      type: "float64" }
+  - { name: "bdist",   type: "float64" }
+  - { name: "tdistbr", type: "float64" }
+  - { name: "tdistlr", type: "float64" }
+  - { name: "tdistsk", type: "float64" }
+  - { name: "tdist",   type: "float64" }

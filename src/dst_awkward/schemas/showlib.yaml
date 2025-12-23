@@ -1,0 +1,15 @@
+bank_id: 12811
+name: "showlib"
+endian: "<"
+layout:
+  - { name: "code",     type: "int32" }
+  - { name: "number",   type: "int32" }
+  - { name: "angle",    type: "float32" }
+  - { name: "particle", type: "int32" }
+  - { name: "energy",   type: "float32" }
+  - { name: "first",    type: "float32" }
+  - { name: "nmax",     type: "float32" }
+  - { name: "x0",       type: "float32" }
+  - { name: "xmax",     type: "float32" }
+  - { name: "lambda",   type: "float32" }
+  - { name: "chi2",     type: "float32" }
