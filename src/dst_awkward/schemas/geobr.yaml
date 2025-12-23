@@ -1,0 +1,122 @@
+bank_id: 12101  # <--- Only this ID changes
+name: "geobr"
+endian: "<"
+
+layout:
+  # Header (8 bytes) is skipped by Python reader
+  # Start with the first actual data field
+  - { name: "uniqID",     type: "int32" }
+  
+  # Site Location
+  - { name: "latitude",   type: "float64" }
+  - { name: "longitude",  type: "float64" }
+  - { name: "altitude",   type: "float64" }
+
+  # Site Vectors (Fixed 3)
+  - { name: "vclf",       type: "float64", shape: [3] }
+  - { name: "vsite",      type: "float64", shape: [3] }
+  - { name: "local_vsite",type: "float64", shape: [3] }
+
+  # Rotation Matrices (Fixed 3x3)
+  - { name: "site2earth", type: "float64", shape: [3, 3] }
+  - { name: "site2clf",   type: "float64", shape: [3, 3] }
+
+  # --- Legacy Mirror Arrays (Fixed 12) ---
+  # The C code hardcodes loop < 12 here, ignoring nmir
+  - { name: "local_vmir_old", type: "float64", shape: [12, 3] }
+  - { name: "local_vcam_old", type: "float64", shape: [12, 3] }
+  - { name: "vmir_old",       type: "float64", shape: [12, 3] }
+
+  - { name: "mir_lat_old",    type: "float64", shape: [12] }
+  - { name: "mir_lon_old",    type: "float64", shape: [12] }
+  - { name: "mir_alt_old",    type: "float64", shape: [12] }
+  
+  - { name: "mir_the_old",    type: "float64", shape: [12] }
+  - { name: "mir_phi_old",    type: "float64", shape: [12] }
+  - { name: "rcurve_old",     type: "float64", shape: [12] }
+  - { name: "sep_old",        type: "float64", shape: [12] }
+
+  - { name: "site2cam_old",   type: "float64", shape: [12, 3, 3] }
+
+  # Legacy Tube Data (256 per mirror)
+  - { name: "xtube_old",      type: "float64", shape: [256] }
+  - { name: "ytube_old",      type: "float64", shape: [256] }
+  - { name: "vtube_old",      type: "float64", shape: [12, 256, 3] }
+
+  # Legacy Segments (Fixed 18)
+  - { name: "vseg_old",       type: "float64", shape: [18, 3] }
+
+  # Camera Box Dimensions
+  - { name: "diameter_old",   type: "float64" }
+  - { name: "cam_width",      type: "float64" }
+  - { name: "cam_height",     type: "float64" }
+  - { name: "cam_depth",      type: "float64" }
+  - { name: "pmt_flat2flat",  type: "float64" }
+  - { name: "pmt_point2point",type: "float64" }
+  - { name: "seg_flat2flat",  type: "float64" }
+  - { name: "seg_point2point",type: "float64" }
+
+  - { name: "ring_old",       type: "int32", shape: [12] }
+  - { name: "siteid",         type: "int32" }
+
+  # --- Version 3 Extensions ---
+  # Now we switch to dynamic sizes based on 'nmir'
+  - { name: "nmir",           type: "int32" }
+  - { name: "nseg",           type: "int32", shape: ["nmir"] } # Segments per mirror
+  - { name: "ring",           type: "int32", shape: ["nmir"] }
+  - { name: "diameters",      type: "float64", shape: ["nmir"] }
+
+  # V3 Position Arrays
+  - { name: "local_vmir",     type: "float64", shape: ["nmir", 3] }
+  - { name: "local_vcam",     type: "float64", shape: ["nmir", 3] }
+  - { name: "vmir",           type: "float64", shape: ["nmir", 3] }
+
+  # V3 Scalar Arrays
+  - { name: "mir_lat",        type: "float64", shape: ["nmir"] }
+  - { name: "mir_lon",        type: "float64", shape: ["nmir"] }
+  - { name: "mir_alt",        type: "float64", shape: ["nmir"] }
+  - { name: "mir_the",        type: "float64", shape: ["nmir"] }
+  - { name: "mir_phi",        type: "float64", shape: ["nmir"] }
+  - { name: "rcurve",         type: "float64", shape: ["nmir"] }
+  - { name: "sep",            type: "float64", shape: ["nmir"] }
+
+  - { name: "site2cam",       type: "float64", shape: ["nmir", 3, 3] }
+  
+  # V3 Tubes (nmir * 256 * 3)
+  - { name: "vtube",          type: "float64", shape: ["nmir", 256, 3] }
+  
+  - { name: "camtype",        type: "int32", shape: ["nmir"] }
+
+  # --- V3 Segments (Jagged) ---
+  # These depend on 'nseg', which is an array [nseg_0, nseg_1, ... nseg_nmir]
+  # The C code loops over mirrors and segments sequentially.
+  # We read this as one bulk array and unflatten by 'nseg'.
+
+  - type: "bulk_jagged"
+    name: "vseg"
+    dtype: "float64"
+    outer_counts: "nseg" # This variable holds the list of counts [18, 18, 4...]
+    item_shape: [3]      # Each element is a vector of 3 doubles
+
+  - type: "bulk_jagged"
+    name: "seg_center"
+    dtype: "float64"
+    outer_counts: "nseg"
+    item_shape: [3]
+
+  - { name: "rotation",       type: "float64", shape: ["nmir"] }
+
+  # --- V3 Segment Properties (Interleaved) ---
+  # The C code loops: for i in nmir: for j in nseg[i]: pack(rcurve), pack(spot)...
+  # This creates an interleaved sequence of jagged arrays.
+  - type: "interleaved_jagged"
+    outer_counts: "nseg"
+    items:
+      - { name: "seg_rcurve",  type: "float64" }
+      - { name: "seg_spot",    type: "float64" }
+      - { name: "seg_orient",  type: "float64" }
+      - { name: "seg_rcurvex", type: "float64" }
+      - { name: "seg_rcurvey", type: "float64" }
+      - { name: "seg_spotx",   type: "float64" }
+      - { name: "seg_spoty",   type: "float64" }
+
