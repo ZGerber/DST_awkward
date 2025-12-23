@@ -1,0 +1,15 @@
+[project]
+name = "dst-awkward"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "awkward>=2.8.11",
+    "matplotlib>=3.10.8",
+    "numpy>=2.4.0",
+    "pandas>=2.3.3",
+    "pyarrow>=22.0.0",
+    "pyyaml>=6.0.3",
+    "scipy>=1.16.3",
+]
