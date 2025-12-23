@@ -1,0 +1,49 @@
+bank_id: 13101
+name: "rusdraw"
+endian: "<"
+layout:
+  # --- Header Scalars ---
+  - { name: "event_num", type: "int32" }
+  - { name: "event_code",type: "int32" }
+  - { name: "site",      type: "int32" }
+  - { name: "run_id",    type: "int32", shape: [3] }
+  - { name: "trig_id",   type: "int32", shape: [3] }
+  - { name: "errcode",   type: "int32" }
+  - { name: "yymmdd",    type: "int32" }
+  - { name: "hhmmss",    type: "int32" }
+  - { name: "usec",      type: "int32" }
+  - { name: "monyymmdd", type: "int32" }
+  - { name: "monhhmmss", type: "int32" }
+  - { name: "nofwf",     type: "int32" }
+
+  # --- Planar Arrays ---
+  - { name: "nretry",    type: "int32", shape: ["nofwf"] }
+  - { name: "wf_id",     type: "int32", shape: ["nofwf"] }
+  - { name: "trig_code", type: "int32", shape: ["nofwf"] }
+  - { name: "xxyy",      type: "int32", shape: ["nofwf"] }
+  - { name: "clkcnt",    type: "int32", shape: ["nofwf"] }
+  - { name: "mclkcnt",   type: "int32", shape: ["nofwf"] }
+
+  # --- Interleaved Loop  ---
+  - type: "interleaved_sequence"
+    count: "nofwf"
+    items:
+      - { name: "fadcti",    type: "int32", shape: [2] }
+      - { name: "fadcav",    type: "int32", shape: [2] }
+      - { name: "fadc",      type: "int32", shape: [2, 128] }
+      
+      # Calibration constants 
+      - { name: "pchmip",    type: "int32", shape: [2] }
+      - { name: "pchped",    type: "int32", shape: [2] }
+      - { name: "lhpchmip",  type: "int32", shape: [2] }
+      - { name: "lhpchped",  type: "int32", shape: [2] }
+      - { name: "rhpchmip",  type: "int32", shape: [2] }
+      - { name: "rhpchped",  type: "int32", shape: [2] }
+      
+      # Fit Results
+      - { name: "mftndof",   type: "int32",   shape: [2] }
+      - { name: "mip",       type: "float64", shape: [2] }
+      - { name: "mftchi2",   type: "float64", shape: [2] }
+      
+      - { name: "mftp",      type: "float64", shape: [2, 4] }
+      - { name: "mftpe",     type: "float64", shape: [2, 4] }
