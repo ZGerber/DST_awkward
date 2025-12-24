@@ -2,6 +2,9 @@
 *.dst
 *.dst.gz
 
+# Dump text files
+*dump*.txt
+
 # Python-specific ignores
 __pycache__/
 *.py[cod]
