@@ -1,0 +1,18 @@
+bank_id: 13112
+name: "bsdinfo"
+endian: "<"
+layout:
+  - { name: "yymmdd",  type: "int32" }
+  - { name: "hhmmss",  type: "int32" }
+  - { name: "usec",    type: "int32" }
+  - { name: "nbsds",   type: "int32" }
+  
+  # Arrays of bad SDs
+  - { name: "xxyy",    type: "int32", shape: ["nbsds"] }
+  - { name: "bitf",    type: "int32", shape: ["nbsds"] }
+  
+  - { name: "nsdsout", type: "int32" }
+  
+  # Arrays of missing SDs
+  - { name: "xxyyout", type: "int32", shape: ["nsdsout"] }
+  - { name: "bitfout", type: "int32", shape: ["nsdsout"] }
