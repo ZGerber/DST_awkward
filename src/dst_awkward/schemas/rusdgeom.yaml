@@ -1,0 +1,41 @@
+bank_id: 13104
+name: "rusdgeom"
+endian: "<"
+layout:
+  - { name: "nsds", type: "int32" }
+  - { name: "nsig", type: "int32", shape: ["nsds"] }
+
+  # The mixed loop:
+  - type: "interleaved_mixed"
+    count: "nsds"
+    items:
+      - { name: "sdsigq",  type: "float64", size_from: "nsig" } # Dynamic
+      - { name: "sdsigt",  type: "float64", size_from: "nsig" }
+      - { name: "sdsigte", type: "float64", size_from: "nsig" }
+      - { name: "igsig",   type: "int32",   size_from: "nsig" }
+      - { name: "irufptn", type: "int32",   size_from: "nsig" }
+      - { name: "xyzclf",  type: "float64", shape: [3] }        # Fixed
+
+  - { name: "pulsa",     type: "float64", shape: ["nsds"] }
+  - { name: "sdtime",    type: "float64", shape: ["nsds"] }
+  - { name: "sdterr",    type: "float64", shape: ["nsds"] }
+  - { name: "igsd",      type: "int32",   shape: ["nsds"] }
+  - { name: "xxyy",      type: "int32",   shape: ["nsds"] }
+  - { name: "sdirufptn", type: "int32",   shape: ["nsds"] }
+
+  - { name: "xcore",     type: "float64", shape: [3] }
+  - { name: "dxcore",    type: "float64", shape: [3] }
+  - { name: "ycore",     type: "float64", shape: [3] }
+  - { name: "dycore",    type: "float64", shape: [3] }
+  - { name: "t0",        type: "float64", shape: [3] }
+  - { name: "dt0",       type: "float64", shape: [3] }
+  - { name: "theta",     type: "float64", shape: [3] }
+  - { name: "dtheta",    type: "float64", shape: [3] }
+  - { name: "phi",       type: "float64", shape: [3] }
+  - { name: "dphi",      type: "float64", shape: [3] }
+  - { name: "chi2",      type: "float64", shape: [3] }
+  - { name: "ndof",      type: "int32",   shape: [3] }
+  
+  - { name: "a",         type: "float64" }
+  - { name: "da",        type: "float64" }
+  - { name: "tearliest", type: "float64" }
