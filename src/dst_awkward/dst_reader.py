@@ -1,12 +1,17 @@
 import numpy as np
 import awkward as ak
+from importlib import resources
 import yaml
 import struct
 
+def load_schema(bank_name: str):
+    with resources.files('dst_awkward.schemas').joinpath(f'{bank_name}.yaml').open('r') as f:
+        return yaml.safe_load(f)
+
 class BankReader:
-    def __init__(self, schema_path):
-        with open(schema_path, 'r') as f:
-            self.schema = yaml.safe_load(f)
+    def __init__(self, bank_name: str):
+        # Load the schema using the bank name (e.g., "fraw1" -> loads fraw1.yaml)
+        self.schema = load_schema(bank_name)
         
         # Map YAML types to Numpy dtypes (assuming Little Endian '<')
         endian = self.schema.get('endian', '<')

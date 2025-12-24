@@ -2,52 +2,48 @@ import awkward as ak
 import numpy as np
 import os
 import time
-from dst_io import DSTFile
-from dst_reader import BankReader
+import argparse  # Added for command-line argument parsing
+from dst_awkward.dst_io import DSTFile
+from dst_awkward.dst_reader import BankReader
 
 # --- Configuration ---
 # Complete mapping of Bank IDs to Schema Files
 BANK_MAP = {
     # SD Raw & MC
-    13101: ("rusdraw",  "rusdraw.yaml"),
-    13105: ("rusdmc",   "rusdmc.yaml"),
-    13106: ("rusdmc1",  "rusdmc1.yaml"),
+    13101: "rusdraw",
+    13105: "rusdmc",
+    13106: "rusdmc1",
     
     # SD Reconstruction
-    13103: ("rufptn",   "rufptn.yaml"),
-    13104: ("rusdgeom", "rusdgeom.yaml"),
-    13107: ("rufldf",   "rufldf.yaml"),
-    13109: ("sdtrgbk",  "sdtrgbk.yaml"),
-    13112: ("bsdinfo",  "bsdinfo.yaml"),
+    13103: "rufptn",
+    13104: "rusdgeom",
+    13107: "rufldf",
+    13109: "sdtrgbk",
+    13112: "bsdinfo",
 
     # FD Data (Geometries & Raw)
-    12091: ("geofd",    "geofd.yaml"),
-    12101: ("geobr",    "geobr.yaml"),
-    12202: ("geolr",    "geolr.yaml"),
-    12001: ("fraw1",    "fraw1.yaml"),
+    12091: "geofd",
+    12101: "geobr",
+    12202: "geolr",
+    12001: "fraw1",
     
     # Calibration / Library
-    12811: ("showlib",  "showlib.yaml"),
+    12811: "showlib",
 }
 
 class DSTMultiReader:
-    def __init__(self, schema_dir="./"):
+    def __init__(self):
         self.readers = {}
         self.bank_names = {}
         
-        print(f"Loading schemas from {schema_dir}...")
-        for bank_id, (name, yaml_file) in BANK_MAP.items():
-            path = os.path.join(schema_dir, yaml_file)
-            if os.path.exists(path):
-                try:
-                    self.readers[bank_id] = BankReader(path)
-                    self.bank_names[bank_id] = name
-                    print(f"  [OK] Loaded {name} ({bank_id})")
-                except Exception as e:
-                    print(f"  [FAIL] Could not load {name}: {e}")
-            else:
-                # print(f"  [SKIP] Schema {yaml_file} not found.")
-                pass
+        print("Loading schemas...")
+        for bank_id, name in BANK_MAP.items():
+            try:
+                self.readers[bank_id] = BankReader(name)
+                self.bank_names[bank_id] = name
+                print(f"  [OK] Loaded {name} ({bank_id})")
+            except Exception as e:
+                print(f"  [FAIL] Could not load {name}: {e}")
 
     def process_file(self, filename, limit=None):
         """Reads DST file and yields Events (dicts of banks)."""
@@ -90,16 +86,28 @@ class DSTMultiReader:
                 yield current_event
 
 def main():
-    # --- FILE SETTINGS ---
-    input_file = "DAT000017.spctrflat.showlib.sdrec.dst.gz"
-    output_parquet = "DAT000017.spctrflat.showlib.sdrec.parquet"
+    # --- Parse Command-Line Arguments ---
+    parser = argparse.ArgumentParser(description="Process a DST file and convert to Parquet format.")
+    parser.add_argument("input_file", help="Path to the input DST file (.dst or .dst.gz)")
+    args = parser.parse_args()
+    
+    input_file = args.input_file
+    
+    # --- Derive Output Parquet Filename ---
+    if input_file.endswith('.dst.gz'):
+        output_parquet = input_file.replace('.dst.gz', '.parquet')
+    elif input_file.endswith('.dst'):
+        output_parquet = input_file.replace('.dst', '.parquet')
+    else:
+        # Fallback: Append .parquet if no matching extension
+        output_parquet = input_file + '.parquet'
     
     if not os.path.exists(input_file):
         print(f"Error: Input file '{input_file}' not found.")
         return
 
     # 1. Initialize
-    multi_reader = DSTMultiReader(".")
+    multi_reader = DSTMultiReader()
     
     # 2. Read Events
     print(f"\nProcessing {input_file}...")
