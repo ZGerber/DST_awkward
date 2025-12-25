@@ -153,18 +153,30 @@ class BankReader:
                     for sub_field in field['items']:
                         dtype = self.dtypes[sub_field['type']]
                         
-                        # Calculate Count
+                        # Calculate Count and Target Shape
                         count = 1
-                        # Dynamic sizing from a previously read array (e.g., nsig[i])
+                        target_shape = []
+                        
+                        # 1. Dynamic Sizing (Outer dimension for this item)
                         if 'size_from' in sub_field:
-                            count *= ctx[sub_field['size_from']][i]
-                        # Fixed shape multiplication
+                            dynamic_n = ctx[sub_field['size_from']][i]
+                            count *= dynamic_n
+                            target_shape.append(dynamic_n)
+
+                        # 2. Fixed Sizing (Inner dimensions)
                         if 'shape' in sub_field:
-                            for dim in sub_field['shape']: count *= dim
+                            for dim in sub_field['shape']: 
+                                count *= dim
+                                target_shape.append(dim)
                         
                         n_bytes = count * dtype.itemsize
                         data = np.frombuffer(buffer, dtype=dtype, count=count, offset=cursor)
                         cursor += n_bytes
+                        
+                        # Reshape if we have structural dimensions
+                        if target_shape:
+                             # .reshape() handles (0, 2) correctly for empty arrays
+                             data = data.reshape(tuple(target_shape))
                         temp_storage[sub_field['name']].append(data)
 
                 for k, v in temp_storage.items():
