@@ -1,0 +1,35 @@
+bank_id: 20002
+name: "sttubeprofile"
+endian: "<"
+layout:
+  - { name: "ntube",   type: "int32", shape: [2] }
+  - { name: "ngtube",  type: "int32" }
+  - { name: "status",  type: "int32" }
+
+  # Loop over sites (0=BR, 1=LR usually)
+  - type: "interleaved_mixed"
+    count: 2
+    items:
+      - { name: "camera",    type: "int32",   size_from: "ntube" }
+      - { name: "tube",      type: "int32",   size_from: "ntube" }
+      - { name: "tube_qual", type: "int32",   size_from: "ntube" }
+      - { name: "x",         type: "float64", size_from: "ntube" }
+      - { name: "npe",       type: "float64", size_from: "ntube" }
+      - { name: "enpe",      type: "float64", size_from: "ntube" }
+      - { name: "simnpe",    type: "float64", size_from: "ntube" }
+      - { name: "flux",      type: "float64", size_from: "ntube" }
+      - { name: "eflux",     type: "float64", size_from: "ntube" }
+      - { name: "simflux",   type: "float64", size_from: "ntube" }
+      - { name: "ne",        type: "float64", size_from: "ntube" }
+      - { name: "ene",       type: "float64", size_from: "ntube" }
+      - { name: "tres",      type: "float64", size_from: "ntube" }
+      - { name: "tchi2",     type: "float64", size_from: "ntube" }
+
+  - { name: "mc",      type: "int32" }
+  - { name: "X0",      type: "float64" }
+  - { name: "eX0",     type: "float64" }
+  - { name: "Lambda",  type: "float64" }
+  - { name: "eLambda", type: "float64" }
+  - { name: "chi2",    type: "float64" }
+  - { name: "dof",     type: "int32" }
+  - { name: "siteid",  type: "int32", shape: [2] }
