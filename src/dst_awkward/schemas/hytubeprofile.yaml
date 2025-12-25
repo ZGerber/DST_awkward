@@ -1,0 +1,39 @@
+bank_id: 13313
+name: "hytubeprofile"
+endian: "<"
+layout:
+  - { name: "ntube",   type: "int32" }
+  - { name: "ngtube",  type: "int32" }
+  - { name: "status",  type: "int32",   shape: [3] }
+  - { name: "chi2",    type: "float64", shape: [3] }
+  - { name: "dof",     type: "int32",   shape: [3] }
+  - { name: "rp",      type: "float64", shape: [3] }
+  - { name: "psi",     type: "float64", shape: [3] }
+  - { name: "t0",      type: "float64", shape: [3] }
+  - { name: "camera",    type: "int32", shape: ["ntube"] }
+  - { name: "tube",      type: "int32", shape: ["ntube"] }
+  - { name: "tube_qual", type: "int32", shape: ["ntube"] }
+  - type: "interleaved_sequence"
+    count: 3
+    items:
+      - { name: "x",        type: "float64", shape: ["ntube"] }
+      - { name: "npe",      type: "float64", shape: ["ntube"] }
+      - { name: "enpe",     type: "float64", shape: ["ntube"] }
+      - { name: "simnpe",   type: "float64", shape: ["ntube"] }
+      - { name: "flux",     type: "float64", shape: ["ntube"] }
+      - { name: "eflux",    type: "float64", shape: ["ntube"] }
+      - { name: "simflux",  type: "float64", shape: ["ntube"] }
+      - { name: "ne",       type: "float64", shape: ["ntube"] }
+      - { name: "ene",      type: "float64", shape: ["ntube"] }
+      - { name: "tres",     type: "float64", shape: ["ntube"] }
+      - { name: "tchi2",    type: "float64", shape: ["ntube"] }
+      - { name: "simtime",  type: "float64", shape: ["ntube"] }
+      - { name: "simtrms",  type: "float64", shape: ["ntube"] }
+      - { name: "simtres",  type: "float64", shape: ["ntube"] }
+      - { name: "timechi2", type: "float64", shape: ["ntube"] }
+  - { name: "siteid",  type: "int32" }
+  - { name: "mc",      type: "int32" }
+  - { name: "X0",      type: "float64" }
+  - { name: "eX0",     type: "float64" }
+  - { name: "Lambda",  type: "float64" }
+  - { name: "eLambda", type: "float64" }

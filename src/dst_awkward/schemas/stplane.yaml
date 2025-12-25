@@ -1,0 +1,37 @@
+bank_id: 20001
+name: "stplane"
+endian: "<"
+layout:
+  # --- Global Event Scalars/Vectors ---
+  - { name: "sdp_angle",    type: "float64", shape: [6] } # 4*3/2 = 6 pairs
+  - { name: "showerVector", type: "float64", shape: [3] }
+  - { name: "impactPoint",  type: "float64", shape: [3] }
+  - { name: "zenith",       type: "float64" }
+  - { name: "azimuth",      type: "float64" }
+
+  # --- Interleaved Site Vectors (BR, LR, MD, TL) ---
+  # These are packed inside a loop: for(i=0; i<4; i++) { pack(sdp_n[i]); pack(rpuv[i]); ... }
+  - type: "interleaved_sequence"
+    count: 4
+    items:
+      - { name: "sdp_n",       type: "float64", shape: [3] }
+      - { name: "rpuv",        type: "float64", shape: [3] }
+      - { name: "shower_axis", type: "float64", shape: [3] }
+      - { name: "core",        type: "float64", shape: [3] }
+
+  # --- Contiguous Site Scalars (Arrays of size 4) ---
+  - { name: "rp",                type: "float64", shape: [4] }
+  - { name: "psi",               type: "float64", shape: [4] }
+  - { name: "shower_zen",        type: "float64", shape: [4] }
+  - { name: "shower_azm",        type: "float64", shape: [4] }
+  
+  - { name: "part",              type: "int32",   shape: [4] }
+  - { name: "event_num",         type: "int32",   shape: [4] }
+  - { name: "sites",             type: "int32",   shape: [4] }
+  
+  - { name: "juliancore",        type: "int32",   shape: [4] }
+  - { name: "jseccore",          type: "int32",   shape: [4] }
+  - { name: "nanocore",          type: "int32",   shape: [4] }
+  
+  - { name: "track_length",      type: "float64", shape: [4] }
+  - { name: "expected_duration", type: "float64", shape: [4] }

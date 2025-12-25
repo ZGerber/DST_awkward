@@ -1,0 +1,61 @@
+bank_id: 12102
+name: "brraw"
+endian: "<"
+layout:
+  # --- Header Scalars ---
+  - { name: "event_code",  type: "int16" }
+  - { name: "part",        type: "int16" }
+  - { name: "num_mir",     type: "int32" }
+  - { name: "event_num",   type: "int32" }
+  - { name: "julian",      type: "int32" }
+  - { name: "jsecond",     type: "int32" }
+  - { name: "gps1pps_tick",type: "int32" }
+  - { name: "ctdclock",    type: "int32" }
+  - { name: "ctd_version", type: "int32" }
+  - { name: "tf_version",  type: "int32" }
+  - { name: "sdf_version", type: "int32" }
+
+  # --- Mirror Arrays ---
+  - { name: "trig_code",   type: "int32", shape: ["num_mir"] }
+  - { name: "second",      type: "int32", shape: ["num_mir"] }
+  - { name: "microsec",    type: "int32", shape: ["num_mir"] }
+  - { name: "clkcnt",      type: "int32", shape: ["num_mir"] }
+  - { name: "mir_num",     type: "int16", shape: ["num_mir"] }
+  - { name: "num_chan",    type: "int16", shape: ["num_mir"] }
+  - { name: "tf_mode",     type: "int32", shape: ["num_mir"] }
+  - { name: "tf_mode2",    type: "int32", shape: ["num_mir"] }
+
+  # --- Hit Patterns ---
+  - type: "interleaved_sequence"
+    count: "num_mir"
+    items:
+      - { name: "hit_pt",  type: "int16", shape: [257] }
+
+  # --- Channel Scalars ---
+  - type: "interleaved_mixed"
+    count: "num_mir"
+    items:
+      - { name: "channel",    type: "int16", size_from: "num_chan" }
+      - { name: "sdf_peak",   type: "int16", size_from: "num_chan" }
+      - { name: "sdf_tmphit", type: "int16", size_from: "num_chan" }
+      - { name: "sdf_mode",   type: "int16", size_from: "num_chan" }
+      - { name: "sdf_ctrl",   type: "int16", size_from: "num_chan" }
+      - { name: "sdf_thre",   type: "int16", size_from: "num_chan" }
+
+  # --- Mean ---
+  - type: "interleaved_mixed"
+    count: "num_mir"
+    items:
+      - { name: "mean", type: "int16", size_from: "num_chan", shape: [4] }
+
+  # --- Disp ---
+  - type: "interleaved_mixed"
+    count: "num_mir"
+    items:
+      - { name: "disp", type: "int16", size_from: "num_chan", shape: [4] }
+
+  # --- FADC ---
+  - type: "interleaved_mixed"
+    count: "num_mir"
+    items:
+      - { name: "m_fadc", type: "int16", size_from: "num_chan", shape: [512] }
