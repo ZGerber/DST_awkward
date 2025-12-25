@@ -41,13 +41,17 @@ class BankReader:
                 name = field['name']
                 
                 count = 1
+                shape_dims = []
+
                 if 'shape' in field:
                     for dim in field['shape']:
                         if isinstance(dim, str):
-                            count *= ctx[dim]
+                            val = ctx[dim]
                         else:
-                            count *= dim
-                
+                            val = dim
+                        count *= val
+                        shape_dims.append(val)
+                        
                 n_bytes = count * dtype.itemsize
                 data = np.frombuffer(buffer, dtype=dtype, count=count, offset=cursor)
                 cursor += n_bytes
@@ -57,6 +61,8 @@ class BankReader:
                     ctx[name] = val
                     results[name] = val
                 else:
+                    if shape_dims:
+                        data = data.reshape(tuple(shape_dims))
                     results[name] = ak.Array(data)
                     ctx[name] = data 
 
