@@ -90,6 +90,8 @@ class BankReader:
 
                         if 'shape' in sub_field:
                             for dim in sub_field['shape']:
+                                if isinstance(dim, str):
+                                    dim = ctx[dim]
                                 fixed_dims.append(dim)
                                 item_count *= dim 
                         
