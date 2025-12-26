@@ -27,37 +27,57 @@ class DSTReader:
                 print(f"  [FAIL] Could not load {name}: {e}")
 
     def process_file(self, filename, limit=None):
-        """Reads DST file and yields Events (dicts of banks)."""
-        current_event = {}
+        """
+        Reads DST file and yields Events (dicts of banks).
+        Uses Event Start (ID 0) and Event End (ID 1) markers to define event boundaries.
+        """
+        # State tracking: None means we are outside an event.
+        current_event = None 
         event_count = 0
+        
+        # Standard DST Markers
+        START_BANKID = 1400000023
+        STOP_BANKID  = 1400000101
         
         with DSTFile(filename) as dst:
             for bank_id, ver, raw_bytes in dst.banks():
-                if bank_id not in self.readers:
-                    continue
                 
-                name = self.bank_names[bank_id]
-                reader = self.readers[bank_id]
-                
-                # Boundary Check: New Event?
-                if name in current_event:
-                    yield current_event
+                # --- Case 1: Start of Event ---
+                if bank_id == START_BANKID:
+                    # Initialize a new dictionary to hold bank data
                     current_event = {}
-                    event_count += 1
-                    if limit and event_count >= limit:
-                        return
+                    continue
 
-                # Parse
-                try:
-                    data, _ = reader.parse_buffer(raw_bytes)
-                    data['_version'] = ver 
-                    current_event[name] = data
-                except Exception as e:
-                    print(f"Error parsing bank {name} (ID {bank_id}, ver {ver}): {e}")
+                # --- Case 2: End of Event ---
+                elif bank_id == STOP_BANKID:
+                    # If we have an open event, yield it now
+                    if current_event is not None:
+                        # Optional: Only yield if we actually found banks of interest?
+                        # For now, we yield if the event structure was valid, 
+                        # allowing the main loop to check if keys exist.
+                        yield current_event
+                        
+                        event_count += 1
+                        current_event = None # Reset state
+                        
+                        if limit and event_count >= limit:
+                            return
+                    continue
 
-            # Yield last event
-            if current_event:
-                yield current_event
+                # --- Case 3: Data Banks ---
+                # Only process banks if we are currently inside a valid event bracket
+                if current_event is not None:
+                    if bank_id in self.readers:
+                        name = self.bank_names[bank_id]
+                        reader = self.readers[bank_id]
+                        
+                        try:
+                            # Parse the bank
+                            data, _ = reader.parse_buffer(raw_bytes)
+                            data['_version'] = ver 
+                            current_event[name] = data
+                        except Exception as e:
+                            print(f"Error parsing bank {name} (ID {bank_id}, ver {ver}): {e}")
 
 def fdraw_dump(fdraw: ak.Record, bank_name="fdraw"):
     print(f"\n{bank_name} :")
@@ -150,7 +170,7 @@ def main():
         
         # Check for any of the 3 raw banks
         for name in ['fdraw', 'brraw', 'lrraw']:
-            if name in event.fields:
+            if name in event.fields and event[name] is not None:
                 fdraw_dump(event[name], bank_name=name)
 
 if __name__ == "__main__":
