@@ -46,7 +46,7 @@ class BankReader:
                 if 'shape' in field:
                     for dim in field['shape']:
                         if isinstance(dim, str):
-                            val = ctx[dim]
+                            val = int(ctx[dim]) # make sure we don't downsize the integer storage
                         else:
                             val = dim
                         count *= val
@@ -69,23 +69,21 @@ class BankReader:
             # --- Case 2: Interleaved Sequence (Fixed or Global Dynamic) ---
             elif f_type == 'interleaved_sequence':
                 if isinstance(field['count'], str):
-                    loop_count = ctx[field['count']]
+                    loop_count = int(ctx[field['count']])
                 else:
                     loop_count = field['count']
                 
                 # Determine sizes per iteration
                 if 'size_ref' in field:
-                    # FRAW1 Style: All items depend on a global size array
                     sizes = ctx[field['size_ref']]
                 else:
-                    # RUFPTN/RUSDRAW Style: Items have fixed shapes
                     sizes = None 
 
                 temp_storage = {sub['name']: [] for sub in field['items']}
                 
                 for i in range(loop_count):
                     # If sizes is None, we default to 1, but item['shape'] overrides it below
-                    current_size_base = sizes[i] if sizes is not None else 1
+                    current_size_base = int(sizes[i]) if sizes is not None else 1
                     
                     for sub_field in field['items']:
                         dtype = self.dtypes[sub_field['type']]
@@ -97,7 +95,7 @@ class BankReader:
                         if 'shape' in sub_field:
                             for dim in sub_field['shape']:
                                 if isinstance(dim, str):
-                                    dim = ctx[dim]
+                                    dim = int(ctx[dim])
                                 fixed_dims.append(dim)
                                 item_count *= dim 
                         
@@ -131,7 +129,7 @@ class BankReader:
                 if 'inner_counts' in field:
                     inner_counts = ctx[field['inner_counts']]
                     flat_counts = ak.flatten(inner_counts)
-                    total_elements = np.sum(flat_counts)
+                    total_elements = int(np.sum(flat_counts))
                     n_bytes = int(total_elements * items_per_row * dtype.itemsize)
                     raw = np.frombuffer(buffer, dtype=dtype, count=total_elements * items_per_row, offset=cursor)
                     cursor += n_bytes
@@ -150,7 +148,7 @@ class BankReader:
             # Handles loops where some items are dynamic (array-driven) and some are fixed
             elif f_type == 'interleaved_mixed':
                 if isinstance(field['count'], str):
-                    loop_count = ctx[field['count']]
+                    loop_count = int(ctx[field['count']])
                 else:
                     loop_count = field['count']
                 temp_storage = {sub['name']: [] for sub in field['items']}
@@ -165,7 +163,7 @@ class BankReader:
                         
                         # 1. Dynamic Sizing (Outer dimension for this item)
                         if 'size_from' in sub_field:
-                            dynamic_n = ctx[sub_field['size_from']][i]
+                            dynamic_n = int(ctx[sub_field['size_from']][i])
                             count *= dynamic_n
                             target_shape.append(dynamic_n)
 
