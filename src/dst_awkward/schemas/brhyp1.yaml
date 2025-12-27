@@ -1,0 +1,78 @@
+bank_id: 13301
+name: "brhyp1"
+endian: "<"
+layout:
+layout:
+  # Exact copy of hyp1 layout
+  - { name: "eventCode", type: "int16" }
+  - { name: "tref", type: "float64" }
+  - { name: "offset", type: "float64" }
+  - { name: "fdEventNum", type: "int32" }
+  - { name: "fdsiteid", type: "int32" }
+  - { name: "julian", type: "int32" }
+  - { name: "jsecond", type: "int32" }
+  - { name: "jsecfrac", type: "int32" }
+
+  - { name: "sdEventNum", type: "int32" }
+  - { name: "sdsiteid", type: "int32" }
+  - { name: "yymmdd", type: "int32" }
+  - { name: "hhmmss", type: "int32" }
+  - { name: "usec", type: "int32" }
+
+  - { name: "nfit", type: "int32" }
+  - { name: "ngtube", type: "int32" }
+
+  - { name: "tubeVector", type: "float64", shape: ["ngtube", 3] }
+
+  - { name: "tubeAlt", type: "float64", shape: ["ngtube"] }
+  - { name: "tubeAzm", type: "float64", shape: ["ngtube"] }
+  - { name: "tubeSigma", type: "float64", shape: ["ngtube"] }
+  - { name: "fdplaneIndex", type: "int32", shape: ["ngtube"] }
+  - { name: "npe", type: "float64", shape: ["ngtube"] }
+  - { name: "fdTime", type: "int32", shape: ["ngtube"] }
+  - { name: "fdTimeRMS", type: "float64", shape: ["ngtube"] }
+
+  - type: interleaved_sequence
+    count: "nfit"
+    items:
+      - { name: "planeAlt", type: "float64", shape: ["ngtube"] }
+      - { name: "planeAzm", type: "float64", shape: ["ngtube"] }
+
+  - { name: "nhits", type: "int32" }
+  - { name: "xyz", type: "float64", shape: ["nhits", 3] }
+
+  - { name: "rho", type: "float64", shape: ["nhits"] }  
+  - { name: "rufptnIndex", type: "int32", shape: ["nhits"] }
+  - type: interleaved_sequence
+    count: "nfit"
+    items:
+      - { name: "sdTime", type: "float64", shape: ["nhits"] }
+      - { name: "sdTimeSigma", type: "float64", shape: ["nhits"] }
+      - { name: "sdPlaneAlt", type: "float64", shape: ["nhits"] }
+      - { name: "sdPlaneAzm", type: "float64", shape: ["nhits"] }
+
+  - { name: "sdp", type: "float64", shape: ["nfit", 3] }
+  - { name: "fitType", type: "int8", shape: ["nfit", 128] }
+
+  - { name: "rp",        type: "float64", shape: ["nfit"] }
+  - { name: "dRp",       type: "float64", shape: ["nfit"] }
+  - { name: "psi",       type: "float64", shape: ["nfit"] }
+  - { name: "dPsi",      type: "float64", shape: ["nfit"] }
+  - { name: "t0",        type: "float64", shape: ["nfit"] }
+  - { name: "dT0",       type: "float64", shape: ["nfit"] }
+  - { name: "xcore",     type: "float64", shape: ["nfit"] }
+  - { name: "dXcore",    type: "float64", shape: ["nfit"] }
+  - { name: "ycore",     type: "float64", shape: ["nfit"] }
+  - { name: "dYcore",    type: "float64", shape: ["nfit"] }
+  - { name: "zen",       type: "float64", shape: ["nfit"] }
+  - { name: "dZen",      type: "float64", shape: ["nfit"] }
+  - { name: "azm",       type: "float64", shape: ["nfit"] }
+  - { name: "dAzm",      type: "float64", shape: ["nfit"] }
+  - { name: "tc",        type: "float64", shape: ["nfit"] }
+  - { name: "dTc",       type: "float64", shape: ["nfit"] }      
+
+  - { name: "nComp",     type: "int32",   shape: [2] }
+  - { name: "chi2Comp",  type: "float64", shape: ["nfit", 4] }
+  - { name: "chi2",      type: "float64", shape: ["nfit"] }
+  - { name: "fdResidual","type": "float64", shape: ["nfit", "ngtube"] }
+  - { name: "sdResidual","type": "float64", shape: ["nfit", "nhits"] }
