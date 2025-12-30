@@ -35,7 +35,7 @@ rcode += dst_unpacki4_ (&rusdraw_.nofwf, &nobj, bank, &rusdraw_blen, &rusdraw_ma
 nobj = rusdraw_.nofwf;
 rcode += dst_unpacki4_ (&rusdraw_.nretry[0], &nobj, bank, &rusdraw_blen, &rusdraw_maxlen);
 ``` 
-This describes a byte buffer where the first four bytes (32 bits) code (little endian integer) for `event_num`, the next 3$\times$4 bytes (3$\timets$32 bits) code for `trig_id`, the next 4 bytes code for `nofwf`, and finally the next `nofwf`$\times$4 bytes code for the `xxyy` array. (N.B. `rusdraw` is actually significantly more complicated than this.)
+This describes a byte buffer where the first four bytes (32 bits) code (little endian integer) for `event_num`, the next 3$\times$4 bytes (3$\times$32 bits) code for `trig_id`, the next 4 bytes code for `nofwf`, and finally the next `nofwf`$\times$4 bytes code for the `xxyy` array. (N.B. `rusdraw` is actually significantly more complicated than this.)
 
 ### Interleaved sequences
 A common pattern for 2D arrays in DST bank is to have several different attributes with the same size on the first axis stored in an interleaved fashion. This is denoted by the type `interleaved_sequence` (which doesn't have `name` or `shape`) and which requires a `count` and a list of `items`. The `items` have the same expectations as with the scalars and 1D arrays above. More example from `rusdraw`:
