@@ -2,7 +2,6 @@ bank_id: 12093
 name: "fdplane"
 endian: "<"
 layout:
-  # --- Header Scalars ---
   - { name: "part",        type: "int32" }
   - { name: "event_num",   type: "int32" }
   - { name: "julian",      type: "int32" }
@@ -11,52 +10,53 @@ layout:
   - { name: "second",      type: "int32" }
   - { name: "secfrac",     type: "int32" }
   - { name: "ntube",       type: "int32" }
-  - { name: "uniqID",      type: "int32" } # Assumes ver >= 1
-  - { name: "fmode",       type: "int32" } # Assumes ver >= 1
 
-  # --- Tube Data 1 ---
+  - { name: "uniqID",      type: "int32" } # Version >=1
+  - { name: "fmode",       type: "int32" } # Version >=1
+
   - { name: "npe",       type: "float64", shape: ["ntube"] }
-  - { name: "adc",       type: "float64", shape: ["ntube"] } # Assumes ver >= 2
-  - { name: "ped",       type: "float64", shape: ["ntube"] } # Assumes ver >= 2
+  - { name: "adc",       type: "float64", shape: ["ntube"] } # Version >=2
+  - { name: "ped",       type: "float64", shape: ["ntube"] } # Version >=2
   - { name: "time",      type: "float64", shape: ["ntube"] }
   - { name: "time_rms",  type: "float64", shape: ["ntube"] }
   - { name: "sigma",     type: "float64", shape: ["ntube"] }
 
-  # --- SDP Fit ---
   - { name: "sdp_n",     type: "float64", shape: [3] }
   - { name: "sdp_en",    type: "float64", shape: [3] }
+
   - { name: "sdp_n_cov", type: "float64", shape: [3, 3] }
+
   - { name: "sdp_the",   type: "float64" }
   - { name: "sdp_phi",   type: "float64" }
   - { name: "sdp_chi2",  type: "float64" }
 
-  # --- Tube Data 2 ---
   - { name: "alt",       type: "float64", shape: ["ntube"] }
   - { name: "azm",       type: "float64", shape: ["ntube"] }
   - { name: "plane_alt", type: "float64", shape: ["ntube"] }
   - { name: "plane_azm", type: "float64", shape: ["ntube"] }
 
-  # --- Line Fit ---
   - { name: "linefit_slope",  type: "float64" }
   - { name: "linefit_eslope", type: "float64" }
   - { name: "linefit_int",    type: "float64" }
   - { name: "linefit_eint",   type: "float64" }
   - { name: "linefit_chi2",   type: "float64" }
+
   - { name: "linefit_cov",    type: "float64", shape: [2, 2] }
+
   - { name: "linefit_res",    type: "float64", shape: ["ntube"] }
   - { name: "linefit_tchi2",  type: "float64", shape: ["ntube"] }
 
-  # --- Pseudo-Tangent Fit ---
   - { name: "ptanfit_rp",    type: "float64" }
   - { name: "ptanfit_erp",   type: "float64" }
   - { name: "ptanfit_t0",    type: "float64" }
   - { name: "ptanfit_et0",   type: "float64" }
   - { name: "ptanfit_chi2",  type: "float64" }
+
   - { name: "ptanfit_cov",   type: "float64", shape: [2, 2] }
+
   - { name: "ptanfit_res",   type: "float64", shape: ["ntube"] }
   - { name: "ptanfit_tchi2", type: "float64", shape: ["ntube"] }
 
-  # --- Tangent Fit ---
   - { name: "rp",          type: "float64" }
   - { name: "erp",         type: "float64" }
   - { name: "psi",         type: "float64" }
@@ -64,20 +64,24 @@ layout:
   - { name: "t0",          type: "float64" }
   - { name: "et0",         type: "float64" }
   - { name: "tanfit_chi2", type: "float64" }
+
   - { name: "tanfit_cov",  type: "float64", shape: [3, 3] }
+
   - { name: "tanfit_res",  type: "float64", shape: ["ntube"] }
   - { name: "tanfit_tchi2",type: "float64", shape: ["ntube"] }
 
-  # --- Extents & Geometry ---
   - { name: "azm_extent",  type: "float64" }
   - { name: "time_extent", type: "float64" }
+
   - { name: "shower_zen",  type: "float64" }
   - { name: "shower_azm",  type: "float64" }
+
   - { name: "shower_axis", type: "float64", shape: [3] }
+
   - { name: "rpuv",        type: "float64", shape: [3] }
+
   - { name: "core",        type: "float64", shape: [3] }
 
-  # --- Tube Integer Data ---
   - { name: "camera",      type: "int32", shape: ["ntube"] }
   - { name: "tube",        type: "int32", shape: ["ntube"] }
   - { name: "it0",         type: "int32", shape: ["ntube"] }
@@ -85,7 +89,6 @@ layout:
   - { name: "knex_qual",   type: "int32", shape: ["ntube"] }
   - { name: "tube_qual",   type: "int32", shape: ["ntube"] }
 
-  # --- Tail Scalars ---
   - { name: "ngtube",      type: "int32" }
   - { name: "seed",        type: "int32" }
   - { name: "type",        type: "int32" }

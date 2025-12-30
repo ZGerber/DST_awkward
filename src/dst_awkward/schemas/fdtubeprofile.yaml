@@ -2,46 +2,76 @@ bank_id: 12096
 name: "fdtubeprofile"
 endian: "<"
 layout:
-  # --- Scalars & Fixed Arrays ---
   - { name: "ntube",   type: "int32" }
-  - { name: "ngtube",  type: "int32" }
+
+  - { name: "ngtube",  type: "int32", shape: [3] }
   
-  - { name: "status",  type: "int32",   shape: [3] }
-  - { name: "chi2",    type: "float64", shape: [3] }
-  - { name: "dof",     type: "int32",   shape: [3] }
   - { name: "rp",      type: "float64", shape: [3] }
   - { name: "psi",     type: "float64", shape: [3] }
   - { name: "t0",      type: "float64", shape: [3] }
 
-  # --- Tube Identification (1D Arrays) ---
-  - { name: "camera",    type: "int32", shape: ["ntube"] }
-  - { name: "tube",      type: "int32", shape: ["ntube"] }
-  - { name: "tube_qual", type: "int32", shape: ["ntube"] }
+  - { name: "status",  type: "int32",   shape: [3] }
+  - { name: "chi2",    type: "float64", shape: [3] }
+  - { name: "dof",     type: "int32",   shape: [3] }
 
-  # --- Profile Fits (3 Iterations, each containing arrays of size ntube) ---
+  - { name: "Xmax",     type: "float64", shape: [3] }
+  - { name: "eXmax",    type: "float64", shape: [3] }
+  - { name: "Nmax",     type: "float64", shape: [3] }
+  - { name: "eNmax",    type: "float64", shape: [3] }
+  - { name: "Energy",   type: "float64", shape: [3] }
+  - { name: "eEnergy",  type: "float64", shape: [3] }
+  - { name: "chi2",     type: "float64", shape: [3] }
+
+# Version >= 2
+  - { name: "X0",  type: "float64", shape: [3] }
+  - { name: "eX0", type: "float64", shape: [3] }
+  - { name: "Lambda",  type: "float64", shape: [3] }
+  - { name: "eLambda", type: "float64", shape: [3] }
+
   - type: "interleaved_sequence"
     count: 3
     items:
-      - { name: "x",        type: "float64", shape: ["ntube"] }
-      - { name: "npe",      type: "float64", shape: ["ntube"] }
-      - { name: "enpe",     type: "float64", shape: ["ntube"] }
-      - { name: "simnpe",   type: "float64", shape: ["ntube"] }
-      - { name: "flux",     type: "float64", shape: ["ntube"] }
-      - { name: "eflux",    type: "float64", shape: ["ntube"] }
-      - { name: "simflux",  type: "float64", shape: ["ntube"] }
-      - { name: "ne",       type: "float64", shape: ["ntube"] }
-      - { name: "ene",      type: "float64", shape: ["ntube"] }
-      - { name: "tres",     type: "float64", shape: ["ntube"] }
-      - { name: "tchi2",    type: "float64", shape: ["ntube"] }
+      - { name: "x",         type: "float64", shape: ["ntube"] }
+
+      - { name: "npe",       type: "float64", shape: ["ntube"] }
+      - { name: "enpe",      type: "float64", shape: ["ntube"] }
+      - { name: "eacptfrac", type: "float64", shape: ["ntube"] }
+
+      - { name: "acpt",      type: "float64", shape: ["ntube"] }
+      - { name: "eacpt",     type: "float64", shape: ["ntube"] }
+
+      - { name: "flux",      type: "float64", shape: ["ntube"] }
+      - { name: "eflux",     type: "float64", shape: ["ntube"] }
+
+      - { name: "simnpe",    type: "float64", shape: ["ntube"] }
+
+      - { name: "nfl",       type: "float64", shape: ["ntube"] }
+      - { name: "ncvdir",    type: "float64", shape: ["ntube"] }
+      - { name: "ncvmie",    type: "float64", shape: ["ntube"] }
+      - { name: "ncvray",    type: "float64", shape: ["ntube"] }
+      - { name: "simflux",   type: "float64", shape: ["ntube"] }
+
+      - { name: "ne",        type: "float64", shape: ["ntube"] }
+      - { name: "ene",       type: "float64", shape: ["ntube"] }
+
+      - { name: "tres",      type: "float64", shape: ["ntube"] }
+      - { name: "tchi2",     type: "float64", shape: ["ntube"] }
+
+  - { name: "camera",    type: "int32", shape: ["ntube"] }
+  - { name: "tube",      type: "int32", shape: ["ntube"] }
+
+  - { name: "tube_qual", type: "int32", shape: [3, "ntube"] }
+
+  - { name: "status",  type: "int32" , shape: [3] }
+
+  - { name: "siteid",  type: "int32" }
+  - { name: "mc",      type: "int32" }
+
+# Version >= 3
+  - type: "interleaved_sequence"
+    count: 3
+    items:
       - { name: "simtime",  type: "float64", shape: ["ntube"] }
       - { name: "simtrms",  type: "float64", shape: ["ntube"] }
       - { name: "simtres",  type: "float64", shape: ["ntube"] }
       - { name: "timechi2", type: "float64", shape: ["ntube"] }
-
-  # --- Tail Scalars ---
-  - { name: "siteid",  type: "int32" }
-  - { name: "mc",      type: "int32" }
-  - { name: "X0",      type: "float64" }
-  - { name: "eX0",     type: "float64" }
-  - { name: "Lambda",  type: "float64" }
-  - { name: "eLambda", type: "float64" }

@@ -3,39 +3,33 @@ name: "fraw1"
 endian: "<" # Little Endian (Standard DST on x86)
 
 layout:
-  # --- Header Scalars ---
   - { name: "event_code", type: "int16" }
   - { name: "site",       type: "int16" }
   - { name: "part",       type: "int16" }
   - { name: "num_mir",    type: "int16" }
+
   - { name: "event_num",  type: "int32" }
   - { name: "julian",     type: "int32" }
   - { name: "jsecond",    type: "int32" }
   - { name: "jclkcnt",    type: "int32" }
 
-  # --- Level 1 Arrays (Size = num_mir) ---
-  # These are packed contiguously in the C code
   - { name: "second",     type: "int32", shape: ["num_mir"] }
   - { name: "clkcnt",     type: "int32", shape: ["num_mir"] }
+
   - { name: "mir_num",    type: "int16", shape: ["num_mir"] }
   - { name: "num_chan",   type: "int16", shape: ["num_mir"] }
 
-  # --- Level 2 Arrays (Jagged) ---
-  # In C, these are loops: for(i=0..num_mir) { pack(channel[i]); pack(it0[i])... }
-  # This creates an INTERLEAVED sequence of variable length arrays.
   - type: "interleaved_sequence"
-    count: "num_mir"    # Loop N times
-    size_ref: "num_chan" # Each iteration reads num_chan[i] items
+    count: "num_mir"
+    size_ref: "num_chan"
     items:
       - { name: "channel",  type: "int16" }
       - { name: "it0_chan", type: "int16" }
       - { name: "nt_chan",  type: "int16" }
 
-  # --- Level 3 Data (Double Jagged) ---
-  # Nested loops in C: for(i..) for(j..) pack(data[i][j])
-  # We read this as one massive blob and unflatten it twice.
   - type: "bulk_jagged"
     name: "m_fadc"
-    dtype: "int8" # integer1
-    outer_counts: "num_chan" # 1st unflatten: separate mirrors
-    inner_counts: "nt_chan"  # 2nd unflatten: separate channels
+    dtype: "int8" 
+    outer_counts: "num_mir"
+    inner_counts: "num_chan"
+    size_field: "nt_chan"

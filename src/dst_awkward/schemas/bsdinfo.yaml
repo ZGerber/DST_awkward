@@ -6,13 +6,10 @@ layout:
   - { name: "hhmmss",  type: "int32" }
   - { name: "usec",    type: "int32" }
   - { name: "nbsds",   type: "int32" }
-  
-  # Arrays of bad SDs
   - { name: "xxyy",    type: "int32", shape: ["nbsds"] }
   - { name: "bitf",    type: "int32", shape: ["nbsds"] }
-  
+  # Bank version >= 1
   - { name: "nsdsout", type: "int32" }
-  
-  # Arrays of missing SDs
   - { name: "xxyyout", type: "int32", shape: ["nsdsout"] }
+  # Bank version >= 2
   - { name: "bitfout", type: "int32", shape: ["nsdsout"] }

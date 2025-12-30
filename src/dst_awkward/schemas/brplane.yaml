@@ -11,19 +11,22 @@ layout:
   - { name: "second",      type: "int32" }
   - { name: "secfrac",     type: "int32" }
   - { name: "ntube",       type: "int32" }
-  - { name: "uniqID",      type: "int32" }
-  - { name: "fmode",       type: "int32" }
-  
+
+  - { name: "uniqID",      type: "int32" } # Version >=1
+  - { name: "fmode",       type: "int32" } # Version >=1
+
   - { name: "npe",       type: "float64", shape: ["ntube"] }
-  - { name: "adc",       type: "float64", shape: ["ntube"] }
-  - { name: "ped",       type: "float64", shape: ["ntube"] }
+  - { name: "adc",       type: "float64", shape: ["ntube"] } # Version >=2
+  - { name: "ped",       type: "float64", shape: ["ntube"] } # Version >=2
   - { name: "time",      type: "float64", shape: ["ntube"] }
   - { name: "time_rms",  type: "float64", shape: ["ntube"] }
   - { name: "sigma",     type: "float64", shape: ["ntube"] }
 
   - { name: "sdp_n",     type: "float64", shape: [3] }
   - { name: "sdp_en",    type: "float64", shape: [3] }
+
   - { name: "sdp_n_cov", type: "float64", shape: [3, 3] }
+
   - { name: "sdp_the",   type: "float64" }
   - { name: "sdp_phi",   type: "float64" }
   - { name: "sdp_chi2",  type: "float64" }
@@ -38,7 +41,9 @@ layout:
   - { name: "linefit_int",    type: "float64" }
   - { name: "linefit_eint",   type: "float64" }
   - { name: "linefit_chi2",   type: "float64" }
+
   - { name: "linefit_cov",    type: "float64", shape: [2, 2] }
+
   - { name: "linefit_res",    type: "float64", shape: ["ntube"] }
   - { name: "linefit_tchi2",  type: "float64", shape: ["ntube"] }
 
@@ -47,7 +52,9 @@ layout:
   - { name: "ptanfit_t0",    type: "float64" }
   - { name: "ptanfit_et0",   type: "float64" }
   - { name: "ptanfit_chi2",  type: "float64" }
+
   - { name: "ptanfit_cov",   type: "float64", shape: [2, 2] }
+
   - { name: "ptanfit_res",   type: "float64", shape: ["ntube"] }
   - { name: "ptanfit_tchi2", type: "float64", shape: ["ntube"] }
 
@@ -58,16 +65,22 @@ layout:
   - { name: "t0",          type: "float64" }
   - { name: "et0",         type: "float64" }
   - { name: "tanfit_chi2", type: "float64" }
+
   - { name: "tanfit_cov",  type: "float64", shape: [3, 3] }
+
   - { name: "tanfit_res",  type: "float64", shape: ["ntube"] }
   - { name: "tanfit_tchi2",type: "float64", shape: ["ntube"] }
 
   - { name: "azm_extent",  type: "float64" }
   - { name: "time_extent", type: "float64" }
+
   - { name: "shower_zen",  type: "float64" }
   - { name: "shower_azm",  type: "float64" }
+
   - { name: "shower_axis", type: "float64", shape: [3] }
+
   - { name: "rpuv",        type: "float64", shape: [3] }
+
   - { name: "core",        type: "float64", shape: [3] }
 
   - { name: "camera",      type: "int32", shape: ["ntube"] }
