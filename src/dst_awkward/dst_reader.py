@@ -29,45 +29,60 @@ class BankReader:
         # unless overridden by the user.
         cursor = start_offset
 
-        ctx = {} 
-        results = {}
+        ctx = {}       # Context dictionary to sizes 
+        results = {}   # Dictionary of final results to return,
 
+        # Iterate over each field in the schema
         for field in self.schema['layout']:
             f_type = field.get('type')
 
             # --- Case 1: Standard Primitive Field ---
-            if f_type not in ['interleaved_sequence', 'bulk_jagged', 'interleaved_jagged', 'interleaved_mixed']:
+            if f_type not in ['interleaved_sequence', 
+                              'bulk_jagged', 
+                              'interleaved_jagged', 
+                              'interleaved_mixed']:
+                # Primitive types read a whole chunk of data at once
+                # that can be a scalar or an array
+                # Expect 'name', 'type', and optional 'shape'
+                
                 dtype = self.dtypes[f_type]
                 name = field['name']
                 
                 count = 1
                 shape_dims = []
 
+                # Record shape
                 if 'shape' in field:
                     for dim in field['shape']:
-                        if isinstance(dim, str):
-                            val = int(ctx[dim]) # make sure we don't downsize the integer storage
-                        else:
-                            val = dim
+                        val = int(ctx[dim]) if isinstance(dim, str) else dim
                         count *= val
                         shape_dims.append(val)
                         
+                # Read the data from the buffer and move the cursor
                 n_bytes = count * dtype.itemsize
                 data = np.frombuffer(buffer, dtype=dtype, count=count, offset=cursor)
                 cursor += n_bytes
 
+                # Store data in context and results
                 if 'shape' not in field:
-                    val = data[0]
-                    ctx[name] = val
-                    results[name] = val
+                    ctx[name] = data[0]
+                    results[name] = data[0]
                 else:
-                    if shape_dims:
-                        data = data.reshape(tuple(shape_dims))
-                    results[name] = ak.Array(data)
+                    data = data.reshape(tuple(shape_dims))
                     ctx[name] = data 
+                    results[name] = ak.Array(data)
 
             # --- Case 2: Interleaved Sequence (Fixed or Global Dynamic) ---
             elif f_type == 'interleaved_sequence':
+                # interleaved_sequence reads multiple items in a loop where the 
+                # rows of the items are filled iteratively. The size of each item inside
+                # the loop can be set for smooth arrays with 'shape' and for jagged arrays
+                # with 'size_ref'.
+
+                # 'count' can be an integer or a string reference to a prior size
+                # 'size_ref' is an optional string reference to an array of sizes for each iteration
+                # sub-items must have 'name' and 'type', optional 'shape'
+                
                 if isinstance(field['count'], str):
                     loop_count = int(ctx[field['count']])
                 else:
@@ -79,6 +94,7 @@ class BankReader:
                 else:
                     sizes = None 
 
+                # Create dictionary of sub-items with empty lists to accumulate data
                 temp_storage = {sub['name']: [] for sub in field['items']}
                 
                 for i in range(loop_count):
