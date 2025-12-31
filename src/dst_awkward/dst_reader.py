@@ -133,33 +133,70 @@ class BankReader:
                 for k, v in temp_storage.items():
                     results[k] = ak.Array(v)
 
-            # --- Case 3: Bulk Jagged ---
+            # --- Case 3: Bulk Jagged (Generalized for Rank N) ---
             elif f_type == 'bulk_jagged':
                 dtype = self.dtypes[field['dtype']]
-                outer_counts = ctx[field['outer_counts']]
+                name = field['name']
+
+                # 1. Resolve Hierarchy of Counts
+                # We normalize the schema input to a list of count variable names.
+                # New Schema Style: 'counts': ['ntracks', 'nhits']
+                # Old Schema Style: 'outer_counts': 'ntracks', 'inner_counts': 'nhits'
+                count_names = []
+                if 'counts' in field:
+                    c = field['counts']
+                    count_names = c if isinstance(c, list) else [c]
+                elif 'outer_counts' in field:
+                    count_names.append(field['outer_counts'])
+                    if 'inner_counts' in field:
+                        count_names.append(field['inner_counts'])
                 
+                # 2. Retrieve and Validate Count Arrays
+                # ak.unflatten expects 1D integer arrays. If the count array in `ctx` 
+                # is already jagged (e.g. 'nhits' was read as tracks->hits), we must 
+                # flatten it completely to use it as the definition for the data stream.
+                count_arrays = []
+                for c_name in count_names:
+                    c_arr = ctx[c_name]
+                    if isinstance(c_arr, ak.Array) and c_arr.ndim > 1:
+                        c_arr = ak.flatten(c_arr, axis=None)
+                    count_arrays.append(c_arr)
+
+                # 3. Calculate Total Elements
+                # The total payload size is determined by the sum of the innermost counts.
+                # If there are no counts (scalar), total is 1 (handled in Case 1 usually).
+                if count_arrays:
+                    innermost_counts = count_arrays[-1]
+                    total_elements = int(np.sum(innermost_counts))
+                else:
+                    # Fallback for weird edge cases or empty definitions
+                    total_elements = 0
+
+                # 4. Handle Item Shape (Fixed Dimensions like x,y,z)
+                # These are dimensions that happen *before* the jaggedness (the leaves).
                 item_shape = field.get('item_shape', [])
                 items_per_row = 1
                 for dim in item_shape: items_per_row *= dim
 
-                if 'inner_counts' in field:
-                    inner_counts = ctx[field['inner_counts']]
-                    flat_counts = ak.flatten(inner_counts)
-                    total_elements = int(np.sum(flat_counts))
-                    n_bytes = int(total_elements * items_per_row * dtype.itemsize)
-                    raw = np.frombuffer(buffer, dtype=dtype, count=total_elements * items_per_row, offset=cursor)
-                    cursor += n_bytes
-                    level1 = ak.unflatten(raw, flat_counts)
-                    level2 = ak.unflatten(level1, outer_counts)
-                    results[field['name']] = level2
-                else:
-                    total_elements = np.sum(outer_counts)
-                    n_bytes = int(total_elements * items_per_row * dtype.itemsize)
-                    raw = np.frombuffer(buffer, dtype=dtype, count=total_elements * items_per_row, offset=cursor)
-                    cursor += n_bytes
-                    if item_shape: raw = raw.reshape(-1, *item_shape)
-                    results[field['name']] = ak.unflatten(raw, outer_counts)
+                # 5. Read Raw Buffer
+                n_bytes = int(total_elements * items_per_row * dtype.itemsize)
+                raw = np.frombuffer(buffer, dtype=dtype, count=total_elements * items_per_row, offset=cursor)
+                cursor += n_bytes
 
+                # 6. Apply Item Shape (Fixed Reshape)
+                # If item_shape is [3], we reshape flat data to (N, 3)
+                if item_shape:
+                    raw = raw.reshape((total_elements,) + tuple(item_shape))
+
+                # 7. Iterative Unflattening (The Generalization)
+                # We apply counts in reverse order (Innermost -> Outermost).
+                # Example: Data -> unflatten(hits) -> unflatten(tracks) -> Event
+                current_data = raw
+                for cnt in reversed(count_arrays):
+                    current_data = ak.unflatten(current_data, cnt)
+
+                results[name] = current_data
+                
             # --- Case 4: Interleaved Mixed (New for RUSDGEOM) ---
             # Handles loops where some items are dynamic (array-driven) and some are fixed
             elif f_type == 'interleaved_mixed':
