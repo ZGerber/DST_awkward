@@ -47,20 +47,17 @@ layout:
   - type: "bulk_jagged"
     name: "mean"
     dtype: "int16"
-    outer_counts: "num_mir"
-    inner_counts: "num_chan"
+    counts: [num_mir, num_chan]
     item_shape: [4]
 
   - type: "bulk_jagged"
     name: "disp"
     dtype: "int16"
-    outer_counts: "num_mir"
-    inner_counts: "num_chan"
+    counts: [num_mir, num_chan]
     item_shape: [4]
 
-  - type: "bulk_jagged"
-    name: "m_fadc"
-    dtype: "int16"
-    outer_counts: "num_mir"
-    inner_counts: "num_chan"
+  - name: m_fadc
+    type: bulk_jagged
+    dtype: int16
+    counts: [num_mir, num_chan]
     item_shape: [512]
