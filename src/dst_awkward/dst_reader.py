@@ -195,7 +195,7 @@ class BankReader:
                 for cnt in reversed(count_arrays):
                     current_data = ak.unflatten(current_data, cnt)
 
-                results[name] = current_data
+                results[name] = current_data[0]
                 
             # --- Case 4: Interleaved Mixed (New for RUSDGEOM) ---
             # Handles loops where some items are dynamic (array-driven) and some are fixed
