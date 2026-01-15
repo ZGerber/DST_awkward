@@ -104,11 +104,12 @@ def process_file(fpath, want_banks, dump_all, all_mode_long, skip_events):
         if dump_all:
             # Dump everything that is actually present
             for name in present_banks:
-                banks_to_dump.append((name, all_mode_long))
+                if name not in ('start', 'stop'):
+                    banks_to_dump.append((name, all_mode_long))
         else:
             # Dump only what was requested, provided it exists
             for name, mode in want_banks.items():
-                if name in present_banks:
+                if name not in ('start', 'stop') and name in present_banks:
                     banks_to_dump.append((name, mode))
                     
         # Sort by name for consistent output
