@@ -1,0 +1,11 @@
+bank_id: 30002
+name: "prfc"
+endian: "<"
+layout:
+  # PRFC is highly conditional (bitmask-gated sections + inline lengths).
+  # Until a dedicated PRFC parser/control-flow is implemented, we only read
+  # the fixed header masks so the bank can be discovered without misparsing.
+  - { name: "pflinfo_mask", type: "int16" }
+  - { name: "bininfo_mask", type: "int16" }
+  - { name: "mtxinfo_mask", type: "int16" }
+
