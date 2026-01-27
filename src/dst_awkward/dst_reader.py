@@ -12,6 +12,7 @@ class BankReader:
     def __init__(self, bank_name: str):
         # Load the schema using the bank name (e.g., "fraw1" -> loads fraw1.yaml)
         self.schema = load_schema(bank_name)
+        self.bank_name = bank_name
         
         # Map YAML types to Numpy dtypes (assuming Little Endian '<')
         endian = self.schema.get('endian', '<')
@@ -27,6 +28,17 @@ class BankReader:
         """Parses a bytes object (a single bank) into a Dictionary of Awkward Arrays."""
         # Start at 8 to skip [BankID (4b), BankVersion (4b)]
         # unless overridden by the user.
+        #
+        # Some banks have conditional / control-flow-driven layouts that are not
+        # representable in the simple YAML dialect. For those, dispatch to a
+        # dedicated parser.
+        if self.schema.get("name") == "prfc" or self.bank_name == "prfc":
+            from dst_awkward.prfc_reader import parse_prfc_bank
+
+            endian = self.schema.get("endian", "<")
+            res = parse_prfc_bank(buffer, start_offset=start_offset, endian=endian)
+            return res.data, res.cursor
+
         cursor = start_offset
 
         ctx = {}       # Context dictionary to sizes 
