@@ -1,8 +1,7 @@
 # src/dst_awkward/dump/__init__.py
 import importlib
-import sys
-
-from matplotlib.pylab import short
+# import sys
+# from matplotlib.pylab import short
 
 # Registry of dump functions: { 'bank_name': function }
 _DUMP_REGISTRY = {}
