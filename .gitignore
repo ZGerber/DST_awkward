@@ -5,6 +5,10 @@
 # Dump text files
 *dump*.txt
 
+# Archived README
+README.old.md
+
+
 # Python-specific ignores
 __pycache__/
 *.py[cod]

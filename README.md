@@ -1,109 +1,312 @@
 # DST_awkward
-A utility for converting DST files to awkward record arrays and back.
 
-## DST Reading encoding
-The way that DST files read from files into COMMON blocks/golobal C structs is encoded in a YAML file. The file should contain four keys, e.g.:
+A Python utility for converting Telescope Array DST (Data Summary Tape) files to Awkward Arrays and Parquet format, enabling efficient analysis of cosmic ray detector data.
+
+## Overview
+
+DST files are binary data files containing detector events. This package provides:
+
+- **Conversion**: Transform DST files into modern data formats (Awkward Arrays, Parquet)
+- **Inspection**: Human-readable dumping of bank data (similar to `dstdump`)
+- **Schema-driven parsing**: Bank layouts defined in YAML files
+- **Conditional bank support**: Handles complex banks like PRFC and HCBIN with bitmask-gated sections
+
+## Installation
+
+```bash
+pip install -e .
 ```
+
+This installs the package in editable mode and creates CLI entry points.
+
+## Quick Start
+
+### Convert DST to Parquet
+
+```bash
+dst-convert run123.dst
+# Output: run123.parquet
+
+# Convert specific banks only
+dst-convert run123.dst --banks rusdraw,prfc,hcbin
+
+# Limit number of events
+dst-convert run123.dst --limit 1000
+```
+
+### Inspect Parquet Files
+
+```bash
+# Dump all banks (long format)
+dst-dump +all run123.parquet
+
+# Dump specific banks
+dst-dump +prfc -rusdraw run123.parquet
+
+# Process multiple files
+dst-dump +all run1.parquet run2.parquet run3.parquet
+```
+
+## Architecture
+
+### Data Flow
+
+```
+DST File (.dst)
+    ↓
+[dst-convert]
+    ↓
+Parquet File (.parquet)
+    ↓
+[dst-dump]
+    ↓
+Human-readable output
+```
+
+### Components
+
+1. **`dst-convert`** (`dst_events_to_awkward.py`)
+   - Reads DST files sequentially
+   - Discovers bank schemas from `schemas/*.yaml`
+   - Parses banks using `BankReader` (dispatches to custom parsers for PRFC/HCBIN)
+   - Groups banks into events (event boundaries detected by bank name repetition)
+   - Outputs Awkward Array → Parquet file
+
+2. **`dst-dump`** (`dst_awkward_dump.py`)
+   - Reads Parquet files (output of `dst-convert`)
+   - Formats bank data as human-readable text
+   - Supports short (`-`) and long (`+`) output formats
+
+3. **`BankReader`** (`dst_reader.py`)
+   - Generic YAML-driven parser for most banks
+   - Dispatches to custom parsers for conditional banks:
+     - `prfc_reader.py` - PRFC bank (3 masks, 3 gated sections)
+     - `hcbin_reader.py` - HCBIN bank (1 mask, failmode-gated)
+
+## Bank Schema Format
+
+Bank layouts are defined in YAML files in `src/dst_awkward/schemas/`. Each schema file describes how to parse a specific bank type.
+
+### Basic Structure
+
+```yaml
 bank_id: 13101
 name: "rusdraw"
 endian: "<"
 layout:
+  # Field definitions...
 ```
-The `layout` is where the reading proceedure is enccoded. It is a YAML list with a number of possible items. 
 
-### Scalars and 1D arrays
-The simplest things are scalars and planar arrays, where the keys in the list shold include (field) `name`, (data) `type`, and optionally `shape`. No shape defaults to `shape: [1]`. `shape` is a list, of which we only consider 1D for the moment. The shape can be a string which is a previously defined *name*. It can also be an integer literal. More (partial) example from `rusdraw`:
-```
+- `bank_id`: Unique identifier for this bank type
+- `name`: Bank name (used for event grouping and CLI)
+- `endian`: Byte order (`"<"` little-endian, `">"` big-endian)
+- `layout`: List of field definitions (see below)
+
+### Field Types
+
+#### Scalars and 1D Arrays
+
+```yaml
 layout:
-  - { name: "event_num", type: "int32" }
-  - { name: "trig_id",   type: "int32", shape: [3] }
-  - { name: "nofwf",     type: "int32" }
-  - { name: "xxyy",      type: "int32", shape: ["nofwf"] }
+  - { name: "event_num", type: "int32" }           # Scalar
+  - { name: "trig_id",   type: "int32", shape: [3] }  # Fixed-size array
+  - { name: "nofwf",     type: "int32" }           # Scalar used as size
+  - { name: "xxyy",      type: "int32", shape: ["nofwf"] }  # Variable-size array
 ```
-This corresponds to the C code 
-```
-nobj = 1;
-rcode += dst_unpacki4_ (&rusdraw_.event_num, &nobj, bank, &rusdraw_blen, &rusdraw_maxlen);
-rcode += dst_unpacki4_ (&rusdraw_.trig_id[0], &nobj, bank, &rusdraw_blen,
-		   &rusdraw_maxlen);
-nobj=1;
-rcode +=  dst_unpacki4_ (&rusdraw_.errcode, &nobj, bank, &rusdraw_blen, &rusdraw_maxlen);
-nobj=3;
-rcode += dst_unpacki4_ (&rusdraw_.yymmdd, &nobj, bank, &rusdraw_blen, &rusdraw_maxlen);
-nobj=1;
-rcode += dst_unpacki4_ (&rusdraw_.nofwf, &nobj, bank, &rusdraw_blen, &rusdraw_maxlen);
-nobj = rusdraw_.nofwf;
-rcode += dst_unpacki4_ (&rusdraw_.nretry[0], &nobj, bank, &rusdraw_blen, &rusdraw_maxlen);
-``` 
-This describes a byte buffer where the first four bytes (32 bits) code (little endian integer) for `event_num`, the next $3\times 4$ bytes ($3 \times 32$ bits) code for `trig_id`, the next 4 bytes code for `nofwf`, and finally the next `nofwf` $\times 4$ bytes code for the `xxyy` array. (N.B. `rusdraw` is actually significantly more complicated than this.)
 
-### Interleaved sequences
-A common pattern for 2D arrays in DST bank is to have several different attributes with the same size on the first axis stored in an interleaved fashion. This is denoted by the type `interleaved_sequence` (which doesn't have `name` or `shape`) and which requires a `count` and a list of `items`. The `items` have the same expectations as with the scalars and 1D arrays above. More example from `rusdraw`:
-```
+**Types**: `int8`, `int16`, `int32`, `float32`, `float64`
+
+**Shape**: 
+- Integer literal: fixed size (e.g., `[3]`)
+- String reference: variable size from previously read field (e.g., `["nofwf"]`)
+
+#### Interleaved Sequences
+
+For 2D arrays where multiple fields are interleaved:
+
+```yaml
+layout:
+  - { name: "nofwf", type: "int32" }
   - type: "interleaved_sequence"
-    count: "nofwf"
+    count: "nofwf"  # Loop this many times
     items:
-      - { name: "fadcti",    type: "int32", shape: [2] }
-      - { name: "fadcav",    type: "int32", shape: [2] }
-      - { name: "fadc",      type: "int32", shape: [2, 128] }
+      - { name: "fadcti", type: "int32", shape: [2] }
+      - { name: "fadcav", type: "int32", shape: [2] }
+      - { name: "fadc",   type: "int32", shape: [2, 128] }
 ```
-corresponding to the following C loop:
-```
-for(i = 0;  i< rusdraw_.nofwf; i++) {
-  nobj = 2;
-  rcode += dst_unpacki4_ (&rusdraw_.fadcti[i][0], &nobj, bank, &rusdraw_blen, &rusdraw_maxlen);
-  rcode += dst_unpacki4_ (&rusdraw_.fadcav[i][0], &nobj, bank, &rusdraw_blen, &rusdraw_maxlen);
-  nobj = 128;
-  for (j = 0; j < 2; j++) {
-	  rcode += dst_unpacki4_ (&rusdraw_.fadc[i][j][0], &nobj, bank, &rusdraw_blen, &rusdraw_maxlen);
-	}
-}
-```
-This describes reading from the byte buffer 2 4-byte integers into `fadcti[0]` that go into `fadcti[0,0]` and `fadcti[0,1]`, then 2 4-byte integers that go into `fadcav[0]`, the 256 (2$times$128) integers into `fadc[0]`, *then* 2 4-byte integers into `fadcti[1]`, then `fadcav[1]` then `fadc[1]` and so on up to `nofwf`. The python code knows how to reshape the 2D array which must therefore have standard flattening.
 
-Interleaved sequences can also have jagged arrays, which handle situations like FD data where the number of PMTs in a camera vary by camera (unlike the SD data above where there are always 2 layers per counter). This requires the `size_from` key to which the value must be a previously defined item (which will have been stored as context). An examnple from `fraw1`:
-```
-  - { name: "num_mir",    type: "int16" }
-  - { name: "num_chan",   type: "int16", shape: ["num_mir"] }
+This reads: `fadcti[0]`, `fadcav[0]`, `fadc[0]`, then `fadcti[1]`, `fadcav[1]`, `fadc[1]`, etc.
+
+#### Jagged Arrays in Interleaved Sequences
+
+When array sizes vary per iteration:
+
+```yaml
+layout:
+  - { name: "num_mir",  type: "int16" }
+  - { name: "num_chan", type: "int16", shape: ["num_mir"] }
   - type: "interleaved_sequence"
-    count: "num_mir"    # Loop N times
-    size_ref: "num_chan" # Each iteration reads num_chan[i] items
+    count: "num_mir"
+    size_ref: "num_chan"  # Use num_chan[i] as size for iteration i
     items:
-      - { name: "channel",  type: "int16" }
-      - { name: "it0_chan", type: "int16" }
-      - { name: "nt_chan",  type: "int16" }
-```
-corresponding to the C code:
-```
-nobj=1;
-rcode += dst_packi2_(&fraw1_.num_mir, &nobj, fraw1_bank, &fraw1_blen, &fraw1_maxlen);
-nobj=fraw1_.num_mir;
-rcode += dst_packi2_(&fraw1_.num_chan[0], &nobj, fraw1_bank, &fraw1_blen, &fraw1_maxlen);
-for(i=0;i<fraw1_.num_mir;i++) {
-  nobj=fraw1_.num_chan[i];
-  rcode += dst_packi2_(&fraw1_.channel[i][0], &nobj, fraw1_bank, &fraw1_blen, &fraw1_maxlen);
-  rcode += dst_packi2_(&fraw1_.it0_chan[i][0], &nobj, fraw1_bank, &fraw1_blen, &fraw1_maxlen);
-  rcode += dst_packi2_(&fraw1_.nt_chan[i][0], &nobj, fraw1_bank, &fraw1_blen, &fraw1_maxlen);
-}  
+      - { name: "channel", type: "int16" }
 ```
 
-### Double Jagged Arrays: bulk_jagged
-For rank three arrays, usually waveforms in FDs, there is the `bulk_jagged` type. Here there are no sub-items (there is no interleaving), and the `count` is replaced by `outer_counts` and `inner_counts`. An example from `fraw1`:
-```
+#### Bulk Jagged Arrays
+
+For rank-3 arrays (e.g., waveforms: mirror → channel → samples):
+
+```yaml
+layout:
   - type: "bulk_jagged"
     name: "m_fadc"
-    dtype: "int8" # integer1
-    outer_counts: "num_chan" # 1st unflatten: separate mirrors
-    inner_counts: "nt_chan"  # 2nd unflatten: separate channels
-```
-which corresponds to (the code for `num_mir` and `nt_chan` is assumed from above)
-```
-for(i=0;i<fraw1_.num_mir;i++) {
-  for(j=0;j<fraw1_.num_chan[i];j++) {
-    nobj=fraw1_.nt_chan[i][j];
-    rcode += dst_packi1_(&fraw1_.m_fadc[i][j][0], &nobj, fraw1_bank, &fraw1_blen, &fraw1_maxlen);
-  }
-}  
+    dtype: "int8"
+    outer_counts: "num_chan"  # First dimension
+    inner_counts: "nt_chan"   # Second dimension
 ```
 
-### Interleaved_mixed
+#### Interleaved Mixed
+
+For loops with both fixed-size and variable-size items:
+
+```yaml
+layout:
+  - type: "interleaved_mixed"
+    count: "nsds"
+    items:
+      - { name: "xyzclf", type: "float64", shape: [3] }  # Fixed size
+      - { name: "sdsigq", type: "float64", size_from: "nsig" }  # Variable size
+```
+
+## Conditional Banks
+
+Some banks (PRFC, HCBIN) have complex conditional layouts that can't be expressed in pure YAML. These use custom Python parsers.
+
+### PRFC Bank
+
+- **3 masks**: `pflinfo`, `bininfo`, `mtxinfo` (16-bit each, MSB-first)
+- **3 sections**: Profile parameters, bin data, matrix data
+- **Failmode checks**: Profile section skips data if `failmode != SUCCESS`
+
+### HCBIN Bank
+
+- **1 mask**: `bininfo` (16-bit, MSB-first)
+- **1 section**: Bin data with nested failmode check
+- **Failmode check**: If `failmode != SUCCESS`, bin arrays are not present
+
+Both parsers use shared utilities in `conditional_bank_utils.py`:
+- `BufferReader`: Stateful binary reader with cursor tracking
+- `decode_mask_msb_first()`: Decode packed bitmasks
+- Per-fit storage helpers: `fit_list()`, `fit_empty_arrays()`, `fit_zeros()`
+
+## Output Format
+
+### Parquet Structure
+
+The output Parquet file contains an Awkward Array of **events**. Each event is a record with fields for each bank type:
+
+```python
+import awkward as ak
+events = ak.from_parquet("run123.parquet")
+
+# Access event 0
+event = events[0]
+
+# Access banks
+rusdraw_data = event["rusdraw"]
+prfc_data = event["prfc"]
+hcbin_data = event["hcbin"]
+
+# Banks may be None if not present in that event
+if event["prfc"] is not None:
+    print(event["prfc"]["nbin"])
+```
+
+### Event Boundaries
+
+Events are detected when a bank name repeats (e.g., seeing `start` or `rusdraw` again indicates a new event). The previous event is finalized and yielded.
+
+## Adding New Banks
+
+1. **Create schema file**: `src/dst_awkward/schemas/mybank.yaml`
+   ```yaml
+   bank_id: 12345
+   name: "mybank"
+   endian: "<"
+   layout:
+     - { name: "field1", type: "int32" }
+     # ... more fields
+   ```
+
+2. **If conditional**: Create `src/dst_awkward/mybank_reader.py` with `parse_mybank_bank()` function
+
+3. **Add dispatch**: Update `dst_reader.py` to route to your parser:
+   ```python
+   if self.schema.get("name") == "mybank":
+       from dst_awkward.mybank_reader import parse_mybank_bank
+       # ...
+   ```
+
+4. **Add dump function** (optional): `src/dst_awkward/dump/mybank.py` with `dump_mybank()` function
+
+## Examples
+
+### Convert and Analyze
+
+```bash
+# Convert DST to Parquet
+dst-convert data.dst --banks prfc,hcbin
+
+# Inspect results
+dst-dump +prfc data.parquet | head -100
+
+# Use in Python
+python -c "
+import awkward as ak
+events = ak.from_parquet('data.parquet')
+print(f'Events: {len(events)}')
+print(f'PRFC present in: {sum(events.prfc is not None)} events')
+"
+```
+
+### Multiple Files
+
+```bash
+# Convert multiple runs
+for f in run*.dst; do
+    dst-convert "$f"
+done
+
+# Dump all results
+dst-dump +all run*.parquet
+```
+
+## Project Structure
+
+```
+DST_awkward/
+├── src/dst_awkward/
+│   ├── dst_io.py              # DST file reading
+│   ├── dst_reader.py          # Generic YAML-driven parser
+│   ├── dst_events_to_awkward.py  # Convert tool
+│   ├── dst_awkward_dump.py    # Dump tool
+│   ├── conditional_bank_utils.py  # Shared utilities for PRFC/HCBIN
+│   ├── prfc_reader.py          # PRFC custom parser
+│   ├── hcbin_reader.py         # HCBIN custom parser
+│   ├── schemas/                # YAML bank schemas
+│   └── dump/                   # Bank dump formatters
+├── legacy/                     # Original C bank code (reference)
+└── tests/                      # Test scripts
+```
+
+## Requirements
+
+- Python >= 3.12
+- awkward >= 2.8.11
+- numpy >= 2.4.0
+- pyarrow >= 22.0.0
+- pyyaml >= 6.0.3
+
+## License
+
+See LICENSE file.
