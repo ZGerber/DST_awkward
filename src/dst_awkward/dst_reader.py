@@ -39,6 +39,13 @@ class BankReader:
             res = parse_prfc_bank(buffer, start_offset=start_offset, endian=endian)
             return res.data, res.cursor
 
+        if self.schema.get("name") == "hcbin" or self.bank_name == "hcbin":
+            from dst_awkward.hcbin_reader import parse_hcbin_bank
+
+            endian = self.schema.get("endian", "<")
+            res = parse_hcbin_bank(buffer, start_offset=start_offset, endian=endian)
+            return res.data, res.cursor
+
         cursor = start_offset
 
         ctx = {}       # Context dictionary to sizes 
