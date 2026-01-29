@@ -1,3 +1,5 @@
+import awkward as ak
+
 TLFPTN_ORIGIN_X_CLF = 0.0
 TLFPTN_ORIGIN_Y_CLF = 0.0
 
@@ -7,9 +9,10 @@ def dump_tlfptn(data, short=False):
     Roughly matches `tlfptn_common_to_dumpf_` in `legacy/tlfptn_dst.c`.
 
     Args:
-        data: Awkward Record for the bank.
+        data: Awkward Record or dictionary containing the tlfptn bank data.
         short: If True, suppress the per-hit table (matches C long_output=0).
     """
+    data = ak.to_list(data) if hasattr(data, "to_list") else data
     nhits = int(data["nhits"])
     nsclust = int(data["nsclust"])
     nstclust = int(data["nstclust"])
