@@ -1,90 +1,61 @@
+"""
+Parser for PRFC (Profile Constraint) DST bank.
+
+This module parses the PRFC bank (bank_id=30002) which contains profile
+information from the group profile program. The bank uses bitmask-gated
+sections with conditional data based on failmode checks.
+"""
+
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Any
 
-import numpy as np
+from .conditional_bank_utils import (
+    MAXFIT,
+    BufferReader,
+    ConditionalBankResult,
+    decode_mask_msb_first,
+    fit_empty_arrays,
+    fit_list,
+    fit_zeros,
+)
+
+# Backward compatibility alias
+PRFCParseResult = ConditionalBankResult
 
 
-@dataclass(frozen=True)
-class PRFCParseResult:
-    """
-    Result of parsing a single PRFC bank payload.
-
-    Notes:
-    - This parser follows `prfc_bank_to_common_` in `prfc_dst.c`:
-      masks (int16) → 3 gated loops over 16 fits → per-fit variable-length sections.
-    - Values are stored in a *dense* 16-fit representation:
-      arrays/lists are length 16; missing fits are None.
-    """
-
-    data: dict[str, Any]
-    cursor: int
-
-
-def _decode_mask_msb_first(mask_i16: int, bits: int = 16) -> list[bool]:
-    """
-    Match PRFC's C logic:
-      if (mask & 0x8000) used; mask <<= 1; repeated PRFC_MAXFIT times
-    """
-    m = int(mask_i16) & ((1 << bits) - 1)
-    return [((m >> (bits - 1 - i)) & 1) == 1 for i in range(bits)]
-
-
-def parse_prfc_bank(buffer: bytes, start_offset: int = 8, endian: str = "<") -> PRFCParseResult:
+def parse_prfc_bank(
+    buffer: bytes, start_offset: int = 8, endian: str = "<"
+) -> ConditionalBankResult:
     """
     Parse a PRFC bank (bank_id=30002) from `buffer`.
 
+    This parser follows `prfc_bank_to_common_` in `prfc_dst.c`:
+    masks (int16) → 3 gated loops over 16 fits → per-fit variable-length sections.
+
+    Values are stored in a *dense* 16-fit representation:
+    arrays/lists are length 16; missing fits are None.
+
     Args:
-      buffer: Full bank bytes, including the 8-byte [bank_id, bank_version] header.
-      start_offset: Byte offset where payload begins (default 8).
-      endian: Endianness character for numpy dtypes ('<' little, '>' big). PRFC is '<'.
+        buffer: Full bank bytes, including the 8-byte [bank_id, bank_version] header.
+        start_offset: Byte offset where payload begins (default 8).
+        endian: Endianness character for numpy dtypes ('<' little, '>' big).
 
     Returns:
-      PRFCParseResult(data=dict, cursor=int)
+        ConditionalBankResult(data=dict, cursor=int)
     """
-    cursor = int(start_offset)
+    reader = BufferReader(buffer, start_offset, endian)
 
-    i2 = np.dtype(f"{endian}i2")
-    i4 = np.dtype(f"{endian}i4")
-    f8 = np.dtype(f"{endian}f8")
-
-    def read_scalar(dtype: np.dtype) -> int | float:
-        nonlocal cursor
-        v = np.frombuffer(buffer, dtype=dtype, count=1, offset=cursor)[0]
-        cursor += int(dtype.itemsize)
-        return v.item()
-
-    def read_array(dtype: np.dtype, n: int) -> np.ndarray:
-        nonlocal cursor
-        n = int(n)
-        a = np.frombuffer(buffer, dtype=dtype, count=n, offset=cursor)
-        cursor += int(n * dtype.itemsize)
-        return a
+    MAXMEL = 10  # Maximum matrix elements
 
     # --- 1) Masks (consumed as int16 on disk) ---
-    pflinfo_mask = read_scalar(i2)
-    bininfo_mask = read_scalar(i2)
-    mtxinfo_mask = read_scalar(i2)
+    pflinfo_mask = reader.read_i2()
+    bininfo_mask = reader.read_i2()
+    mtxinfo_mask = reader.read_i2()
 
-    pflinfo = _decode_mask_msb_first(pflinfo_mask, bits=16)
-    bininfo = _decode_mask_msb_first(bininfo_mask, bits=16)
-    mtxinfo = _decode_mask_msb_first(mtxinfo_mask, bits=16)
-
-    # Dense 16-fit storage
-    MAXFIT = 16
-    MAXMEL = 10
-
-    def fit_list() -> list[Any]:
-        return [None] * MAXFIT
-
-    def fit_empty_arrays(dtype: np.dtype) -> list[np.ndarray]:
-        """Dense per-fit jagged payloads: default to empty arrays when absent."""
-        return [np.empty(0, dtype=dtype) for _ in range(MAXFIT)]
-
-    def fit_zeros() -> list[int]:
-        """Dense per-fit counters: default to 0 when absent."""
-        return [0] * MAXFIT
+    pflinfo = decode_mask_msb_first(pflinfo_mask, bits=16)
+    bininfo = decode_mask_msb_first(bininfo_mask, bits=16)
+    mtxinfo = decode_mask_msb_first(mtxinfo_mask, bits=16)
 
     data: dict[str, Any] = {
         "pflinfo_mask": pflinfo_mask,
@@ -99,11 +70,31 @@ def parse_prfc_bank(buffer: bytes, start_offset: int = 8, endian: str = "<") -> 
     failmode = fit_list()
 
     # Profile parameters (only if failmode==SUCCESS)
-    szmx = fit_list(); dszmx = fit_list(); rszmx = fit_list(); lszmx = fit_list(); tszmx = fit_list()
-    xm = fit_list(); dxm = fit_list(); rxm = fit_list(); lxm = fit_list(); txm = fit_list()
-    x0 = fit_list(); dx0 = fit_list(); rx0 = fit_list(); lx0 = fit_list(); tx0 = fit_list()
-    lamb = fit_list(); dlamb = fit_list(); rlamb = fit_list(); llamb = fit_list(); tlamb = fit_list()
-    eng = fit_list(); deng = fit_list(); reng = fit_list(); leng = fit_list(); teng = fit_list()
+    szmx = fit_list()
+    dszmx = fit_list()
+    rszmx = fit_list()
+    lszmx = fit_list()
+    tszmx = fit_list()
+    xm = fit_list()
+    dxm = fit_list()
+    rxm = fit_list()
+    lxm = fit_list()
+    txm = fit_list()
+    x0 = fit_list()
+    dx0 = fit_list()
+    rx0 = fit_list()
+    lx0 = fit_list()
+    tx0 = fit_list()
+    lamb = fit_list()
+    dlamb = fit_list()
+    rlamb = fit_list()
+    llamb = fit_list()
+    tlamb = fit_list()
+    eng = fit_list()
+    deng = fit_list()
+    reng = fit_list()
+    leng = fit_list()
+    teng = fit_list()
 
     traj_source = fit_list()
     errstat = fit_list()
@@ -116,22 +107,46 @@ def parse_prfc_bank(buffer: bytes, start_offset: int = 8, endian: str = "<") -> 
         if not pflinfo[i]:
             continue
 
-        fm = read_scalar(i4)
+        fm = reader.read_i4()
         failmode[i] = fm
         if fm != SUCCESS:
             continue
 
         # Each group is value/stat/right/left/geom, all float64
-        szmx[i], dszmx[i], rszmx[i], lszmx[i], tszmx[i] = (read_scalar(f8), read_scalar(f8), read_scalar(f8), read_scalar(f8), read_scalar(f8))
-        xm[i], dxm[i], rxm[i], lxm[i], txm[i] = (read_scalar(f8), read_scalar(f8), read_scalar(f8), read_scalar(f8), read_scalar(f8))
-        x0[i], dx0[i], rx0[i], lx0[i], tx0[i] = (read_scalar(f8), read_scalar(f8), read_scalar(f8), read_scalar(f8), read_scalar(f8))
-        lamb[i], dlamb[i], rlamb[i], llamb[i], tlamb[i] = (read_scalar(f8), read_scalar(f8), read_scalar(f8), read_scalar(f8), read_scalar(f8))
-        eng[i], deng[i], reng[i], leng[i], teng[i] = (read_scalar(f8), read_scalar(f8), read_scalar(f8), read_scalar(f8), read_scalar(f8))
+        szmx[i] = reader.read_f8()
+        dszmx[i] = reader.read_f8()
+        rszmx[i] = reader.read_f8()
+        lszmx[i] = reader.read_f8()
+        tszmx[i] = reader.read_f8()
 
-        traj_source[i] = read_scalar(i4)
-        errstat[i] = read_scalar(i4)
-        ndf[i] = read_scalar(i4)
-        chi2[i] = read_scalar(f8)
+        xm[i] = reader.read_f8()
+        dxm[i] = reader.read_f8()
+        rxm[i] = reader.read_f8()
+        lxm[i] = reader.read_f8()
+        txm[i] = reader.read_f8()
+
+        x0[i] = reader.read_f8()
+        dx0[i] = reader.read_f8()
+        rx0[i] = reader.read_f8()
+        lx0[i] = reader.read_f8()
+        tx0[i] = reader.read_f8()
+
+        lamb[i] = reader.read_f8()
+        dlamb[i] = reader.read_f8()
+        rlamb[i] = reader.read_f8()
+        llamb[i] = reader.read_f8()
+        tlamb[i] = reader.read_f8()
+
+        eng[i] = reader.read_f8()
+        deng[i] = reader.read_f8()
+        reng[i] = reader.read_f8()
+        leng[i] = reader.read_f8()
+        teng[i] = reader.read_f8()
+
+        traj_source[i] = reader.read_i4()
+        errstat[i] = reader.read_i4()
+        ndf[i] = reader.read_i4()
+        chi2[i] = reader.read_f8()
 
     data.update(
         {
@@ -170,34 +185,34 @@ def parse_prfc_bank(buffer: bytes, start_offset: int = 8, endian: str = "<") -> 
 
     # --- 3) Bin section (gated by bininfo[i]) ---
     nbin = fit_zeros()
-    dep = fit_empty_arrays(f8)
-    gm = fit_empty_arrays(f8)
-    scin = fit_empty_arrays(f8)
-    rayl = fit_empty_arrays(f8)
-    aero = fit_empty_arrays(f8)
-    crnk = fit_empty_arrays(f8)
-    sigmc = fit_empty_arrays(f8)
-    sig = fit_empty_arrays(f8)
-    ig = fit_empty_arrays(i2)
+    dep = fit_empty_arrays(reader.f8)
+    gm = fit_empty_arrays(reader.f8)
+    scin = fit_empty_arrays(reader.f8)
+    rayl = fit_empty_arrays(reader.f8)
+    aero = fit_empty_arrays(reader.f8)
+    crnk = fit_empty_arrays(reader.f8)
+    sigmc = fit_empty_arrays(reader.f8)
+    sig = fit_empty_arrays(reader.f8)
+    ig = fit_empty_arrays(reader.i2)
 
     for i in range(MAXFIT):
         if not bininfo[i]:
             continue
 
-        nb = read_scalar(i2)
+        nb = reader.read_i2()
         nbin[i] = nb
 
-        dep[i] = read_array(f8, nb)
-        gm[i] = read_array(f8, nb)
+        dep[i] = reader.read_f8_array(nb)
+        gm[i] = reader.read_f8_array(nb)
 
-        scin[i] = read_array(f8, nb)
-        rayl[i] = read_array(f8, nb)
-        aero[i] = read_array(f8, nb)
-        crnk[i] = read_array(f8, nb)
-        sigmc[i] = read_array(f8, nb)
-        sig[i] = read_array(f8, nb)
+        scin[i] = reader.read_f8_array(nb)
+        rayl[i] = reader.read_f8_array(nb)
+        aero[i] = reader.read_f8_array(nb)
+        crnk[i] = reader.read_f8_array(nb)
+        sigmc[i] = reader.read_f8_array(nb)
+        sig[i] = reader.read_f8_array(nb)
 
-        ig[i] = read_array(i2, nb)
+        ig[i] = reader.read_i2_array(nb)
 
     data.update(
         {
@@ -217,19 +232,19 @@ def parse_prfc_bank(buffer: bytes, start_offset: int = 8, endian: str = "<") -> 
     # --- 4) Matrix section (gated by mtxinfo[i]) ---
     nel = fit_zeros()
     mor = fit_zeros()
-    mxel = fit_empty_arrays(f8)
+    mxel = fit_empty_arrays(reader.f8)
 
     for i in range(MAXFIT):
         if not mtxinfo[i]:
             continue
 
-        ne = read_scalar(i2)
-        mo = read_scalar(i2)
+        ne = reader.read_i2()
+        mo = reader.read_i2()
         nel[i] = ne
         mor[i] = mo
 
         ne_clamped = min(int(ne), MAXMEL)
-        mxel[i] = read_array(f8, ne_clamped)
+        mxel[i] = reader.read_f8_array(ne_clamped)
 
         # If the bank actually contained more than MAXMEL elements, the C code clamps
         # and only unpacks MAXMEL. We mirror that behavior (no skipping of remaining
@@ -237,6 +252,4 @@ def parse_prfc_bank(buffer: bytes, start_offset: int = 8, endian: str = "<") -> 
 
     data.update({"nel": nel, "mor": mor, "mxel": mxel})
 
-    return PRFCParseResult(data=data, cursor=cursor)
-
-
+    return ConditionalBankResult(data=data, cursor=reader.cursor)

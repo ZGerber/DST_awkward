@@ -1,0 +1,9 @@
+bank_id: 15007
+name: "hcbin"
+endian: "<"
+layout:
+  # HCBIN is conditional (bitmask-gated + failmode checks + inline lengths).
+  # Until a dedicated HCBIN parser/control-flow is implemented, we only read
+  # the fixed header mask so the bank can be discovered without misparsing.
+  # Full parsing is handled by hcbin_reader.py.
+  - { name: "bininfo_mask", type: "int16" }

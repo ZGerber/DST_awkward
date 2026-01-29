@@ -17,3 +17,10 @@ dependencies = [
     "pyyaml>=6.0.3",
     "scipy>=1.16.3",
 ]
+
+[project.scripts]
+dst-dump = "dst_awkward.dst_awkward_dump:main"
+dst-convert = "dst_awkward.dst_events_to_awkward:main"
+
+[tool.setuptools.package-data]
+dst_awkward = ["schemas/*.yaml", "schemas/*.yml"]
