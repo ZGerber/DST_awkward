@@ -1,0 +1,6 @@
+bank_id: 15008
+name: "mdweat"
+endian: "<"
+layout:
+  - { name: "part_num", type: "int32" }
+  - { name: "code", type: "int32" }

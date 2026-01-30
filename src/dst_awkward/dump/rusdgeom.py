@@ -1,3 +1,6 @@
+import awkward as ak
+
+
 def dump_rusdgeom(data, short=False):
     """
     Replicates the exact output format of rusdgeom_dst.c
@@ -7,6 +10,7 @@ def dump_rusdgeom(data, short=False):
         short (bool): If True, short form (omits signal-level details).
                       If False, long form (includes signal-level details).
     """
+    data = ak.to_list(data) if hasattr(data, "to_list") else data
     
     print("rusdgeom :")
     print(f"nsds={data['nsds']} tearliest={data['tearliest']:.2f}")
@@ -25,8 +29,9 @@ def dump_rusdgeom(data, short=False):
     
     nsds = data['nsds']
     for i in range(nsds):
-        # Short table
-        print(f"{i:3d}{data['xxyy'][i]:10d}{data['pulsa'][i]:15f}{data['sdtime'][i]:15f}{data['sdterr'][i]:15f}{data['sdirufptn'][i]:11d}{data['igsd'][i]:12d}")
+        # Short table - xxyy uses %10.04d format (zero-padded 4 digits in width 10)
+        xxyy = f"{data['xxyy'][i]:04d}"
+        print(f"{i:3d}{xxyy:>10}{data['pulsa'][i]:15f}{data['sdtime'][i]:15f}{data['sdterr'][i]:15f}{data['sdirufptn'][i]:11d}{data['igsd'][i]:12d}")
     
     if not short:
         print()
@@ -34,6 +39,7 @@ def dump_rusdgeom(data, short=False):
         print(f"{"index":s}{"xxyy":>8s}{"sdsigq,[VEM]":>18s}{"sdsigt,[1200m]":>17s}{"sdsigte,[1200m]":>16s}{"sdirufptn":>10s}{"igsig":>8s}")
         for i in range(nsds):
             nsig_i = data['nsig'][i]
+            xxyy = f"{data['xxyy'][i]:04d}"
             for j in range(nsig_i):
-                # Long table
-                print(f"{i:3d}{data['xxyy'][i]:10d}{data['sdsigq'][i][j]:15f}{data['sdsigt'][i][j]:15f}{data['sdsigte'][i][j]:15f}{data['irufptn'][i][j]:11d}{data['igsig'][i][j]:12d}")
+                # Long table - xxyy uses %10.04d format (zero-padded 4 digits in width 10)
+                print(f"{i:3d}{xxyy:>10}{data['sdsigq'][i][j]:15f}{data['sdsigt'][i][j]:15f}{data['sdsigte'][i][j]:15f}{data['irufptn'][i][j]:11d}{data['igsig'][i][j]:12d}")

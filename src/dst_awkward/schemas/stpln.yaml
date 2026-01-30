@@ -1,0 +1,9 @@
+bank_id: 15043
+name: "stpln"
+endian: "<"
+layout:
+  # STPLN has conditional packing based on if_eye flags.
+  # Until a dedicated parser is implemented, we only read the header.
+  - { name: "jday", type: "int32" }
+  - { name: "jsec", type: "int32" }
+  - { name: "msec", type: "int32" }

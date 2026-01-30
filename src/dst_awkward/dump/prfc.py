@@ -43,6 +43,49 @@ def _failmode_message(code):
     return _FAILMODE.get(int(code), "Unknown failmode")
 
 
+# Bank ID -> name mapping (for trajectory source)
+_BANK_NAMES = {
+    12001: "fraw1",
+    12091: "geofd",
+    12092: "fdraw",
+    12093: "fdplane",
+    12096: "fdtubeprofile",
+    12101: "geobr",
+    12102: "brraw",
+    12103: "brplane",
+    12106: "brtubeprofile",
+    12201: "lrraw",
+    12202: "geolr",
+    12203: "lrplane",
+    12206: "lrtubeprofile",
+    12503: "tlplane",
+    12811: "showlib",
+    13101: "rusdraw",
+    13103: "rufptn",
+    13104: "rusdgeom",
+    13105: "rusdmc",
+    13106: "rusdmc1",
+    13107: "rufldf",
+    13109: "sdtrgbk",
+    13112: "bsdinfo",
+    13201: "talex00",
+    13204: "tlfptn",
+    13300: "hyp1",
+    13301: "brhyp1",
+    13302: "lrhyp1",
+    13313: "hytubeprofile",
+    15006: "hctim",
+    15007: "hcbin",
+    20001: "stplane",
+    20002: "sttubeprofile",
+    30002: "prfc",
+}
+
+
+def _bank_name(bank_id):
+    return _BANK_NAMES.get(int(bank_id), "Unknown Bank")
+
+
 def dump_prfc(data, short=False):
     """
     Replicates the exact output format of prfc_dst.c
@@ -80,6 +123,7 @@ def dump_prfc(data, short=False):
             print(f"    {_failmode_message(failmode[i])}")
             continue
         if not mark_header:
+            print()
             print("            value   stat error        right       left     geom error")
             mark_header = True
         print(
@@ -111,7 +155,7 @@ def dump_prfc(data, short=False):
         print(f" chi2/ndf: {data['chi2'][i]:7.3f} / {data['ndf'][i]:3d}")
         traj = data["traj_source"][i]
         errstat_val = data["errstat"][i]
-        print(f" trajectory source: {traj:5d} (Unknown Bank)    errstat: {errstat_val}")
+        print(f" trajectory source: {traj:5d} ({_bank_name(traj)})    errstat: {errstat_val}")
         if errstat_val != SUCCESS:
             if errstat_val & _STAT_ERROR:
                 print("   STATISTICAL errors failed")

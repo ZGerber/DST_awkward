@@ -1,0 +1,7 @@
+bank_id: 15042
+name: "stps2"
+endian: "<"
+layout:
+  # STPS2 has conditional packing based on if_eye flags.
+  # Until a dedicated parser is implemented, we only read the header.
+  - { name: "maxeye", type: "int32" }

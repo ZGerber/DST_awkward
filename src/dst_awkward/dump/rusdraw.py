@@ -1,4 +1,5 @@
-import sys
+import awkward as ak
+
 
 def dump_rusdraw(data, short=False):
     """
@@ -9,6 +10,7 @@ def dump_rusdraw(data, short=False):
         short (bool): If True, suppresses FADC trace output (matches C long_output=0).
                       If False, includes FADC traces (matches C long_output=1).
     """
+    data = ak.to_list(data) if hasattr(data, "to_list") else data
     
     # --- Helper: Site String Conversion ---
     site_map = {
@@ -86,7 +88,9 @@ def dump_rusdraw(data, short=False):
         # Print the Summary Line
         # Format string from C:
         # "%02d %5.02d %4d %3d %10d %10d %8d %8d %5d %4d %6d %7d %5d %5d %8.1f %6.1f %6.1f %6.1f %5d %4d\n"
-        print(f"{i:02d} {wf_id:5.02f} {xy0:4d} {xy1:3d} {clkcnt:10d} {mclkcnt:10d} "
+        # wf_id uses %5.02d: width 5, zero-padded to 2 digits
+        wf_id_str = f"{wf_id:02d}"
+        print(f"{i:02d} {wf_id_str:>5} {xy0:4d} {xy1:3d} {clkcnt:10d} {mclkcnt:10d} "
               f"{fadcti[0]:8d} {fadcti[1]:8d} {fadcav[0]:5d} {fadcav[1]:4d} "
               f"{pchmip[0]:6d} {pchmip[1]:7d} {pchped[0]:5d} {pchped[1]:5d} "
               f"{mip[0]:8.1f} {mip[1]:6.1f} {mftchi2[0]:6.1f} {mftchi2[1]:6.1f} "
@@ -101,6 +105,7 @@ def dump_rusdraw(data, short=False):
             # --- Lower FADC ---
             print("lower fadc")
             _print_fadc_block(traces[0])
+            print()  # newline after lower block (C: fprintf "\nupper fadc\n")
             
             # --- Upper FADC ---
             print("upper fadc")

@@ -84,6 +84,7 @@ class BufferReader:
         self.endian = endian
 
         # Pre-create dtype objects for efficiency
+        self.i1 = np.dtype(f"{endian}i1")
         self.i2 = np.dtype(f"{endian}i2")
         self.i4 = np.dtype(f"{endian}i4")
         self.f4 = np.dtype(f"{endian}f4")
@@ -103,6 +104,10 @@ class BufferReader:
         return a
 
     # Convenience methods for common types
+    def read_i1(self) -> int:
+        """Read a single int8."""
+        return self.read_scalar(self.i1)
+
     def read_i2(self) -> int:
         """Read a single int16."""
         return self.read_scalar(self.i2)

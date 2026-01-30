@@ -46,6 +46,28 @@ class BankReader:
             res = parse_hcbin_bank(buffer, start_offset=start_offset, endian=endian)
             return res.data, res.cursor
 
+        if self.schema.get("name") == "hctim" or self.bank_name == "hctim":
+            from dst_awkward.hctim_reader import parse_hctim_bank
+
+            endian = self.schema.get("endian", "<")
+            res = parse_hctim_bank(buffer, start_offset=start_offset, endian=endian)
+            return res.data, res.cursor
+
+        if self.schema.get("name") == "stps2" or self.bank_name == "stps2":
+            from dst_awkward.stps2_reader import parse_stps2_bank
+
+            endian = self.schema.get("endian", "<")
+            res = parse_stps2_bank(buffer, start_offset=start_offset, endian=endian)
+            return res.data, res.cursor
+
+        if self.schema.get("name") == "stpln" or self.bank_name == "stpln":
+            from dst_awkward.stpln_reader import parse_stpln_bank
+
+            endian = self.schema.get("endian", "<")
+            # stpln reader reads bank_id/version itself, so start at offset 0 of bank
+            res = parse_stpln_bank(buffer, start_offset=0, endian=endian)
+            return res.data, res.cursor
+
         cursor = start_offset
 
         ctx = {}       # Context dictionary to sizes 
